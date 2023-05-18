@@ -1,0 +1,13 @@
+{
+  "name": "ethereal-api",
+  "version": "1.0.0",
+  "description": "Unified authentication API",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc --build",
+    "start": "node ./dist/index.js"
+  },
+  "repository": "https://github.com/loneloon/ethereal-api.git",
+  "author": "loneloon <f.kleshev@gmail.com>",
+  "license": "MIT"
+}

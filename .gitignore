@@ -1,0 +1,15 @@
+# Node dependency directory
+node_modules
+
+# IDE
+.idea/*
+*.iml
+
+# Logs
+*.log
+
+# TS Compiled
+**/dist
+
+# TS build info
+*.tsbuildinfo
