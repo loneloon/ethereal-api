@@ -16,6 +16,7 @@ export interface CreateUserInputDto {
 export interface UpdateUserInputDto {
     email?: string,
     emailIsVerified?: boolean,
+    isActive?: boolean,
     username?: string,
     firstName?: string,
     lastName?: string

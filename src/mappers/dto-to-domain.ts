@@ -10,6 +10,7 @@ export function mapUserDtoToDomain(userDto: UserDto): User {
         userDto.email,
         userDto.emailIsVerified,
         userDto.username,
+        userDto.isActive,
         userDto.firstName,
         userDto.lastName,
         new Metadata(
