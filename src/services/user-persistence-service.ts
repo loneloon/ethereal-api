@@ -1,11 +1,22 @@
 import { PrismaClient, User as UserDto } from "@prisma/client";
 import { User } from "../models/user";
-import { Metadata, SourceMetadata } from "../models/common";
-import { DateTime } from "luxon";
+import _ from "lodash";
+import { mapUserDtoToDomain } from "../mappers/dto-to-domain";
+
 
 export interface CreateUserInputDto {
     email: string,
     username: string,
+    firstName?: string,
+    lastName?: string
+}
+
+// BE CAREFUL WITH FIELD NAMES IN THESE,
+// THEY MUST MATCH THE SCHEMA EXACTLY
+export interface UpdateUserInputDto {
+    email?: string,
+    emailIsVerified?: boolean,
+    username?: string,
     firstName?: string,
     lastName?: string
 }
@@ -42,35 +53,13 @@ export class UserPersistenceService {
             return null;
         }
 
-        return new User(
-            newUserDto.id,
-            newUserDto.email,
-            newUserDto.emailIsVerified,
-            newUserDto.username,
-            newUserDto.firstName,
-            newUserDto.lastName,
-            new Metadata(
-                DateTime.fromJSDate(newUserDto.createdAt),
-                DateTime.fromJSDate(newUserDto.updatedAt),
-                new SourceMetadata())
-        )
+        return mapUserDtoToDomain(newUserDto)
     }
 
     async getAllUsers(): Promise<User[]> {
         const allUsers: UserDto[] = await this.prismaClient.user.findMany()
 
-        return allUsers.map((userDto) => new User(
-            userDto.id,
-            userDto.email,
-            userDto.emailIsVerified,
-            userDto.username,
-            userDto.firstName,
-            userDto.lastName,
-            new Metadata(
-                DateTime.fromJSDate(userDto.createdAt),
-                DateTime.fromJSDate(userDto.updatedAt),
-                new SourceMetadata())
-        ))
+        return allUsers.map((userDto) => mapUserDtoToDomain(userDto))
     }
 
     async getUserById(id: string): Promise<User | null> {
@@ -91,17 +80,60 @@ export class UserPersistenceService {
             return null
         }
 
-        return new User(
-            userDto.id,
-            userDto.email,
-            userDto.emailIsVerified,
-            userDto.username,
-            userDto.firstName,
-            userDto.lastName,
-            new Metadata(
-                DateTime.fromJSDate(userDto.createdAt),
-                DateTime.fromJSDate(userDto.updatedAt),
-                new SourceMetadata())
-        )
+        return mapUserDtoToDomain(userDto)
+    }
+    
+    async updateUser(id: string, updateUserInputDto: UpdateUserInputDto): Promise<User | null> {
+        const oldUserDto = await this.prismaClient.user.findUnique({
+            where: {
+                id
+            }
+        })
+
+        if (!oldUserDto) {
+            console.warn(
+                JSON.stringify({
+                    message: `Couldn't find user with this id: ${id}`
+                })
+            )
+            return null
+        }
+
+        // Removing possible undefined values from update input
+        const validatedUpdateInput = Object.entries(updateUserInputDto).reduce((filtered, [key, value]) => {
+            
+            if ( value !== undefined ) {
+                return {
+                    ...filtered,
+                    [key]: value
+                }
+            }
+            return filtered
+            
+        }, {})
+
+        let updatedUserDto: UserDto | null = null;
+
+        try {
+            updatedUserDto = await this.prismaClient.user.update({
+                where: {
+                    id
+                },
+                data: validatedUpdateInput
+            })
+        } catch(error) {
+            console.warn(
+                JSON.stringify(
+                    {
+                        message: `Skipping update for user with this id: ${id}`,
+                        error,
+                        validatedUpdateInput
+                    }
+                )
+            )
+            return null
+        }
+
+        return mapUserDtoToDomain(updatedUserDto)
     }
 }
