@@ -1,5 +1,7 @@
 import { PrismaClient, User as UserDto } from "@prisma/client";
 import { User } from "../models/user";
+import { Metadata, SourceMetadata } from "../models/common";
+import { DateTime } from "luxon";
 
 export interface CreateUserInputDto {
     email: string,
@@ -46,7 +48,11 @@ export class UserPersistenceService {
             newUserDto.emailIsVerified,
             newUserDto.username,
             newUserDto.firstName,
-            newUserDto.lastName
+            newUserDto.lastName,
+            new Metadata(
+                DateTime.fromJSDate(newUserDto.createdAt),
+                DateTime.fromJSDate(newUserDto.updatedAt),
+                new SourceMetadata())
         )
     }
 
@@ -59,7 +65,11 @@ export class UserPersistenceService {
             userDto.emailIsVerified,
             userDto.username,
             userDto.firstName,
-            userDto.lastName
+            userDto.lastName,
+            new Metadata(
+                DateTime.fromJSDate(userDto.createdAt),
+                DateTime.fromJSDate(userDto.updatedAt),
+                new SourceMetadata())
         ))
     }
 
@@ -87,7 +97,11 @@ export class UserPersistenceService {
             userDto.emailIsVerified,
             userDto.username,
             userDto.firstName,
-            userDto.lastName
+            userDto.lastName,
+            new Metadata(
+                DateTime.fromJSDate(userDto.createdAt),
+                DateTime.fromJSDate(userDto.updatedAt),
+                new SourceMetadata())
         )
     }
 }
