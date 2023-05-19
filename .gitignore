@@ -13,3 +13,12 @@ node_modules
 
 # TS build info
 *.tsbuildinfo
+
+# Prisma
+**/migrations
+**/*.db
+**/*.db-journal
+
+# Env vars
+**/.env
+

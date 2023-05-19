@@ -5,9 +5,20 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc --build",
-    "start": "node ./dist/index.js"
+    "start": "node ./dist/index.js",
+    "init-prisma-sqlite": "npx prisma init --datasource-provider sqlite",
+    "migrate-prisma": "npx prisma migrate dev --name init"
   },
   "repository": "https://github.com/loneloon/ethereal-api.git",
   "author": "loneloon <f.kleshev@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@prisma/client": "^4.14.1",
+    "@types/node": "^20.2.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "prisma": "^4.14.1"
+  }
 }
