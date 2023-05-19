@@ -137,4 +137,33 @@ export class UserPersistenceService {
 
         return mapUserDtoToDomain(updatedUserDto)
     }
+
+    /**
+     * @deprecated Instead of hard deleting user records, deactivate them by setting 'isActive' flag to false
+     */
+    async deleteUser(id: string): Promise<User | null> {
+        console.warn(JSON.stringify(
+            {
+                message: `Forcefully deleting user with this id: ${id}. Please consider deactivating users (soft-delete) next time instead of losing data :)`
+            }
+        ))
+
+        let deletedUser: UserDto | null = null;
+
+        try{
+            deletedUser = await this.prismaClient.user.delete({
+                where: {
+                    id
+                }
+            })
+        } catch(error) {
+            console.warn(JSON.stringify({
+                message: `Couldn't hard delete user with this id: ${id}`,
+                error
+            }))
+            return null
+        }
+        
+        return mapUserDtoToDomain(deletedUser)
+    }
 }
