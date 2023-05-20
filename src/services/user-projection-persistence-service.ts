@@ -1,4 +1,4 @@
-import { PrismaClient, UserProjection as UserProjectionDto } from "@prisma/client";
+import { PrismaClient as PrismaAupClient, UserProjection as UserProjectionDto } from "@prisma-dual-cli/generated/aup-client";
 import { UserProjection } from "../models/user-projection";
 import { mapUserProjectionDtoToDomain } from "../mappers/dto-to-domain";
 
@@ -18,7 +18,7 @@ export interface UpdateUserProjectionInputDto {
 
 export class UserProjectionPersistenceService {
     constructor(
-        readonly prismaClient: PrismaClient
+        readonly prismaClient: PrismaAupClient
     ){}
     
     async createUserProjection(createUserProjectionInputDto: CreateUserProjectionInputDto): Promise<UserProjection | null>{

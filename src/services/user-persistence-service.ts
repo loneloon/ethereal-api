@@ -1,4 +1,4 @@
-import { PrismaClient, User as UserDto } from "@prisma/client";
+import { PrismaClient as PrismaAupClient, User as UserDto } from "@prisma-dual-cli/generated/aup-client";
 import { User } from "../models/user";
 import _ from "lodash";
 import { mapUserDtoToDomain } from "../mappers/dto-to-domain";
@@ -24,7 +24,7 @@ export interface UpdateUserInputDto {
 
 export class UserPersistenceService {
     constructor(
-        readonly prismaClient: PrismaClient
+        readonly prismaClient: PrismaAupClient
     ){}
 
     async createUser(createUserInputDto: CreateUserInputDto): Promise<User | null>{

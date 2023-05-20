@@ -1,15 +1,16 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient as PrismaAupClient } from '@prisma-dual-cli/generated/aup-client'
+import { PrismaClient as PrismaSsdClient } from '@prisma-dual-cli/generated/ssd-client'
 import { mockDeep, mockReset, DeepMockProxy } from 'jest-mock-extended'
 
-import prisma from '../prisma-client'
+import clients from '../prisma-clients'
 
-jest.mock('../prisma-client', () => ({
+jest.mock('../prisma-clients', () => ({
   __esModule: true,
-  default: mockDeep<PrismaClient>(),
+  default: mockDeep<{ aupClient: PrismaAupClient, ssdClient: PrismaSsdClient}>(),
 }))
 
 beforeEach(() => {
-  mockReset(prismaMock)
+  mockReset(prismaMockClients)
 })
 
-export const prismaMock = prisma as unknown as DeepMockProxy<PrismaClient>
+export const prismaMockClients = clients as unknown as DeepMockProxy<{ aupClient: PrismaAupClient, ssdClient: PrismaSsdClient}>

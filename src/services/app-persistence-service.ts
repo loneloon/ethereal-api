@@ -1,4 +1,4 @@
-import { PrismaClient, Application as ApplicationDto } from "@prisma/client";
+import { PrismaClient as PrismaAupClient, Application as ApplicationDto } from "@prisma-dual-cli/generated/aup-client";
 import { Application } from '../models/application'
 import { mapApplicationDtoToDomain } from "../mappers/dto-to-domain";
 
@@ -15,7 +15,7 @@ export interface UpdateApplicationInputDto {
 
 export class AppPersistenceService {
     constructor(
-        readonly prismaClient: PrismaClient
+        readonly prismaClient: PrismaAupClient
     ){}
 
     async createApplication(createAppInputDto: CreateApplicationInputDto): Promise<Application | null> {

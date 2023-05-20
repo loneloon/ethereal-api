@@ -1,0 +1,18 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/ssd-client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("SSD_DATABASE_URL")
+}
+
+model Session {
+    id                String            @id @default(uuid())
+    isActive          Boolean           @default(true)
+    createdAt         DateTime          @default(now())
+}

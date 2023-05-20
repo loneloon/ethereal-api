@@ -3,12 +3,12 @@ import { UserPersistenceService } from '../user-persistence-service';
 import { User } from '../../models/user';
 import { Metadata, SourceMetadata } from '../../models/common';
 import { DateTime } from 'luxon';
-import { prismaMock } from '../../test-helpers/mock-prisma';
+import { prismaMockClients } from '../../test-helpers/mock-prisma';
 
 
 describe('UserPersistenceService should be able to ', () => {
     test("CREATE a USER record", async () => {
-        const userPersistenceService = new UserPersistenceService(prismaMock)
+        const userPersistenceService = new UserPersistenceService(prismaMockClients.aupClient)
 
         const mockUserDto = {
             id: uuid(),
@@ -27,7 +27,7 @@ describe('UserPersistenceService should be able to ', () => {
             username: "lizlizzard69",
         }
 
-        prismaMock.user.create.mockResolvedValue(
+        prismaMockClients.aupClient.user.create.mockResolvedValue(
             mockUserDto
             )
 
