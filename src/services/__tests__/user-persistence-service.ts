@@ -9,11 +9,9 @@ import { prismaMock } from '../../test-helpers/mock-prisma';
 describe('UserPersistenceService should be able to ', () => {
     test("CREATE a USER record", async () => {
         const userPersistenceService = new UserPersistenceService(prismaMock)
-        
-        const testId = uuid()
 
         const mockUserDto = {
-            id: testId,
+            id: uuid(),
             email: "liz69@ethereal.com",
             username: "lizlizzard69",
             emailIsVerified: false,
