@@ -148,10 +148,10 @@ export class UserPersistenceService {
             }
         ))
 
-        let deletedUser: UserDto | null = null;
+        let deletedUserDto: UserDto | null = null;
 
         try{
-            deletedUser = await this.prismaClient.user.delete({
+            deletedUserDto = await this.prismaClient.user.delete({
                 where: {
                     id
                 }
@@ -164,6 +164,6 @@ export class UserPersistenceService {
             return null
         }
         
-        return mapUserDtoToDomain(deletedUser)
+        return mapUserDtoToDomain(deletedUserDto)
     }
 }

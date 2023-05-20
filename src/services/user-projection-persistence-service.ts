@@ -176,10 +176,10 @@ export class UserProjectionPersistenceService {
             }
         ))
 
-        let deletedUserProjection: UserProjectionDto | null = null;
+        let deletedUserProjectionDto: UserProjectionDto | null = null;
 
         try{
-            deletedUserProjection = await this.prismaClient.userProjection.delete({
+            deletedUserProjectionDto = await this.prismaClient.userProjection.delete({
                 where: {
                     appId_userId: {
                         appId,
@@ -197,6 +197,6 @@ export class UserProjectionPersistenceService {
             return null
         }
         
-        return mapUserProjectionDtoToDomain(deletedUserProjection)
+        return mapUserProjectionDtoToDomain(deletedUserProjectionDto)
     }
 }
