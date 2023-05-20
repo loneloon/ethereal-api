@@ -8,8 +8,10 @@
     "test": "jest",
     "start": "node ./dist/index.js",
     "init-prisma-sqlite": "npx prisma init --datasource-provider sqlite",
-    "migrate-prisma": "npx prisma migrate dev --name init",
-    "wipe-db": "rm -r ./prisma/migrations && rm ./prisma/dev.db && rm ./prisma/dev.db-journal"
+    "prisma-migrate-dev": "npx prisma migrate dev --name init",
+    "prisma-wipe-dev": "rm -r ./prisma/migrations && rm ./prisma/dev.db && rm ./prisma/dev.db-journal",
+    "prisma-update-client": "npx prisma generate",
+    "prisma-reset-dev": "yarn prisma-wipe-dev ; yarn prisma-migrate-dev"
   },
   "repository": "https://github.com/loneloon/ethereal-api.git",
   "author": "loneloon <f.kleshev@gmail.com>",
