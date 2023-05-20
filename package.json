@@ -5,6 +5,7 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc --build",
+    "test": "jest",
     "start": "node ./dist/index.js",
     "init-prisma-sqlite": "npx prisma init --datasource-provider sqlite",
     "migrate-prisma": "npx prisma migrate dev --name init",
@@ -14,10 +15,16 @@
   "author": "loneloon <f.kleshev@gmail.com>",
   "license": "MIT",
   "devDependencies": {
+    "@babel/preset-env": "^7.21.5",
+    "@babel/preset-typescript": "^7.21.5",
     "@prisma/client": "^4.14.1",
+    "@types/jest": "^29.5.1",
     "@types/lodash": "^4.14.194",
     "@types/luxon": "^3.3.0",
     "@types/node": "^20.2.1",
+    "jest": "^29.5.0",
+    "jest-mock-extended": "2.0.4",
+    "ts-jest": "^29.1.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.4"
   },
