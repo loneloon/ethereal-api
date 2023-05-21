@@ -2,6 +2,7 @@ import { PrismaClient as PrismaAupClient, Application as ApplicationDto } from "
 import { Application } from '../models/application'
 import { mapApplicationDtoToDomain } from "../mappers/dto-to-domain";
 
+
 export interface CreateApplicationInputDto {
     name: string,
     url: string
