@@ -34,7 +34,7 @@ export class UserPersistenceService extends PrismaBasedPersistenceService<
     UpdateUserInputDto
 > {
     protected readonly entityTypeName: string = "User"
-    protected readonly modelAccessor: Prisma.UserDelegate<Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined> & { create: any; };
+    protected readonly modelAccessor: Prisma.UserDelegate<Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined>;
     protected readonly isPrimaryKeyComposite: boolean = false
 
     constructor(

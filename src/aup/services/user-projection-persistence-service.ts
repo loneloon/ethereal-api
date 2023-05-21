@@ -29,7 +29,7 @@ export class UserProjectionPersistenceService extends PrismaBasedPersistenceServ
     UpdateUserProjectionInputDto
 > {
     protected readonly entityTypeName: string = "UserProjection"
-    protected readonly modelAccessor: Prisma.UserProjectionDelegate<Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined> & { create: any; };
+    protected readonly modelAccessor: Prisma.UserProjectionDelegate<Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined>;
     protected readonly isPrimaryKeyComposite: boolean = true;
 
     constructor(

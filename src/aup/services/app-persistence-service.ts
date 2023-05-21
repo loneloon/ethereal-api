@@ -29,7 +29,7 @@ export class AppPersistenceService extends PrismaBasedPersistenceService<
     UpdateApplicationInputDto
 > {
     protected readonly entityTypeName: string = "Application"
-    protected readonly modelAccessor: Prisma.ApplicationDelegate<Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined> & { create: any; };
+    protected readonly modelAccessor: Prisma.ApplicationDelegate<Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined>;
     protected readonly isPrimaryKeyComposite: boolean = false;
 
     constructor(
