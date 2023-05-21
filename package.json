@@ -14,7 +14,9 @@
     "prisma-wipe-ssd-dev": "rm -r ./prisma/migrations && rm ./prisma/ssd-dev.db && rm ./prisma/ssd-dev.db-journal",
     "prisma-generate-aup-client": "npx prisma generate --schema prisma/aup-schema.prisma",
     "prisma-generate-ssd-client": "npx prisma generate --schema prisma/ssd-schema.prisma",
-    "prisma-reset-dev": "yarn prisma-wipe-dev ; yarn prisma-migrate-dev"
+    "prisma-reset-aup-dev": "yarn prisma-wipe-aup-dev ; yarn prisma-migrate-aup-dev",
+    "prisma-reset-ssd-dev": "yarn prisma-wipe-ssd-dev ; yarn prisma-migrate-ssd-dev",
+    "prisma-reset-dev": "yarn prisma-reset-aup-dev ; yarn prisma-reset-ssd-dev"
   },
   "repository": "https://github.com/loneloon/ethereal-api.git",
   "author": "loneloon <f.kleshev@gmail.com>",
