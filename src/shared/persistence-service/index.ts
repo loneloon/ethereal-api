@@ -94,6 +94,26 @@ export abstract class PrismaBasedPersistenceService<
         return entityDto
     }
 
+    protected async searchEntities(searchParams: { [key: string]: any;}): Promise<EntityDto[]> {
+        try {
+            return await this.modelAccessor.findMany({
+                where: {
+                    ...searchParams
+                }
+            })
+        } catch(error) {
+            console.warn(JSON.stringify(
+                {
+                    message: `Couldn't fetch ${this.entityTypeName} records!`,
+                    searchParams,
+                    error
+                }
+            ))
+        }
+
+        return []
+    }
+
     protected async updateEntity(primaryKeyFieldName: string, primaryKeyValue: string | { [key: string]: any;}, updateEntityInputDto: UpdateEntityInputDto): Promise< EntityDto| null >{
         // Removing possible undefined values from update input
         const validatedUpdateInput = Object.entries(updateEntityInputDto as { [key: string]: any}).reduce((filtered, [key, value]) => {
