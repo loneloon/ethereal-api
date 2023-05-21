@@ -3,7 +3,7 @@ import { UserPersistenceService } from '../user-persistence-service';
 import { User } from '../../models/user';
 import { Metadata, SourceMetadata } from '../../models/common';
 import { DateTime } from 'luxon';
-import { prismaMockClients } from '../../../test-helpers/mock-prisma';
+import { prismaMockClients } from '../../../shared/test-helpers/mock-prisma';
 
 
 describe('UserPersistenceService should be able to ', () => {

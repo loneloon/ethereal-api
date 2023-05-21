@@ -7,7 +7,7 @@ export default {
   clearMocks: true,
   preset: 'ts-jest',
   testEnvironment: 'node',
-  setupFilesAfterEnv: ['<rootDir>/src/test-helpers/mock-prisma.ts'],
+  setupFilesAfterEnv: ['<rootDir>/src/shared/test-helpers/mock-prisma.ts'],
   testMatch: [
     '**/__tests__/**/*.[jt]s?(x)',
     '**/?(*.)+(spec|test).[tj]s?(x)',
