@@ -1,4 +1,4 @@
-import { Metadata } from "./common";
+import { Metadata } from "@shared/models/common";
 
 export class Application {
     constructor(
