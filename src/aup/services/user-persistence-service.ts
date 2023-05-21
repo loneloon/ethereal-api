@@ -1,7 +1,6 @@
-import { PrismaClient as PrismaAupClient, User as UserDto } from "@prisma-dual-cli/generated/aup-client";
-import { User } from "../models/user";
+import { PrismaClient as PrismaAupClient, User as UserDto, Prisma } from "@prisma-dual-cli/generated/aup-client";
 import _ from "lodash";
-import { mapUserDtoToDomain } from "../mappers/dto-to-domain";
+import { PrismaBasedPersistenceService } from "../../shared/persistence-service";
 
 
 export interface CreateUserInputDto {
@@ -22,148 +21,44 @@ export interface UpdateUserInputDto {
     lastName?: string
 }
 
-export class UserPersistenceService {
+export class UserPersistenceService extends PrismaBasedPersistenceService<
+    PrismaAupClient,
+    Prisma.UserDelegate<Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined>,
+    UserDto,
+    CreateUserInputDto,
+    UpdateUserInputDto
+> {
+    protected readonly entityTypeName: string = "User"
+    protected readonly modelAccessor: Prisma.UserDelegate<Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined> & { create: any; };
+    protected readonly isPrimaryKeyComposite: boolean = false
+
     constructor(
-        readonly prismaClient: PrismaAupClient
-    ){}
-
-    async createUser(createUserInputDto: CreateUserInputDto): Promise<User | null>{
-        let newUserDto: UserDto | null = null;
-        
-        try {
-            newUserDto = await this.prismaClient.user.create({
-                data: {
-                    // TODO: TRIP, VERIFY STRING FORMAT
-                    email: createUserInputDto.email,
-                    username: createUserInputDto.username,
-                    firstName: createUserInputDto.firstName,
-                    lastName: createUserInputDto.lastName
-                }
-            }
-        )
-        } catch(error) {
-            console.warn(
-                JSON.stringify(
-                    {
-                        message: "Couldn't create a user record!",
-                        error,
-                        createUserInputDto
-                    }
-                )
-            )
-            return null;
-        }
-
-        return mapUserDtoToDomain(newUserDto)
+        readonly prismaClient: PrismaAupClient,
+    ){
+        super()
+        this.modelAccessor = this.prismaClient.user
     }
 
-    async getAllUsers(): Promise<User[]> {
-        const allUsers: UserDto[] = await this.prismaClient.user.findMany()
-
-        return allUsers.map((userDto) => mapUserDtoToDomain(userDto))
+    async createUser(createUserInputDto: CreateUserInputDto): Promise<UserDto| null> {
+        return await this.createEntity(createUserInputDto)
     }
 
-    async getUserById(id: string): Promise<User | null> {
-        const userDto: UserDto | null = await this.prismaClient.user.findUnique(
-            {
-                where: {
-                  id
-                },
-            }
-        )
-        
-        if (!userDto) {
-            console.warn(
-                JSON.stringify({
-                    message: `Couldn't find user with this id: ${id}`
-                })
-            )
-            return null
-        }
+    async getAllUsers(): Promise<UserDto[]> {
+        return await this.getAllEntities()
+    }
 
-        return mapUserDtoToDomain(userDto)
+    async getUserById(id: string): Promise<UserDto | null> {
+        return this.getUniqueEntity("id", id)
     }
     
-    async updateUser(id: string, updateUserInputDto: UpdateUserInputDto): Promise<User | null> {
-        const oldUserDto = await this.prismaClient.user.findUnique({
-            where: {
-                id
-            }
-        })
-
-        if (!oldUserDto) {
-            console.warn(
-                JSON.stringify({
-                    message: `Couldn't find user with this id: ${id}`
-                })
-            )
-            return null
-        }
-
-        // Removing possible undefined values from update input
-        const validatedUpdateInput = Object.entries(updateUserInputDto).reduce((filtered, [key, value]) => {
-            
-            if ( value !== undefined ) {
-                return {
-                    ...filtered,
-                    [key]: value
-                }
-            }
-            return filtered
-            
-        }, {})
-
-        let updatedUserDto: UserDto | null = null;
-
-        try {
-            updatedUserDto = await this.prismaClient.user.update({
-                where: {
-                    id
-                },
-                data: validatedUpdateInput
-            })
-        } catch(error) {
-            console.warn(
-                JSON.stringify(
-                    {
-                        message: `Skipping update for user with this id: ${id}`,
-                        error,
-                        validatedUpdateInput
-                    }
-                )
-            )
-            return null
-        }
-
-        return mapUserDtoToDomain(updatedUserDto)
+    async updateUser(id: string, updateUserInputDto: UpdateUserInputDto): Promise<UserDto | null> {
+        return await this.updateEntity("id", id, updateUserInputDto)
     }
 
     /**
      * @deprecated Instead of hard deleting user records, deactivate them by setting 'isActive' flag to false
      */
-    async deleteUser(id: string): Promise<User | null> {
-        console.warn(JSON.stringify(
-            {
-                message: `Forcefully deleting user with this id: ${id}. Please consider deactivating users (soft-delete) next time instead of losing data :)`
-            }
-        ))
-
-        let deletedUserDto: UserDto | null = null;
-
-        try{
-            deletedUserDto = await this.prismaClient.user.delete({
-                where: {
-                    id
-                }
-            })
-        } catch(error) {
-            console.warn(JSON.stringify({
-                message: `Couldn't hard delete user with this id: ${id}`,
-                error
-            }))
-            return null
-        }
-        
-        return mapUserDtoToDomain(deletedUserDto)
+    async deleteUser(id: string): Promise<UserDto | null> {
+        return await this.deleteEntity("id", id)
     }
 }

@@ -1,6 +1,7 @@
-import { PrismaClient as PrismaAupClient, Application as ApplicationDto } from "@prisma-dual-cli/generated/aup-client";
+import { PrismaClient as PrismaAupClient, Application as ApplicationDto, Prisma } from "@prisma-dual-cli/generated/aup-client";
 import { Application } from '../models/application'
 import { mapApplicationDtoToDomain } from "../mappers/dto-to-domain";
+import { PrismaBasedPersistenceService } from "../../shared/persistence-service";
 
 
 export interface CreateApplicationInputDto {
@@ -14,36 +15,22 @@ export interface UpdateApplicationInputDto {
     isActive: boolean
 }
 
-export class AppPersistenceService {
+export class AppPersistenceService extends PrismaBasedPersistenceService<
+    PrismaAupClient,
+    Prisma.ApplicationDelegate<Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined>,
+    ApplicationDto,
+    CreateApplicationInputDto,
+    UpdateApplicationInputDto
+> {
+    protected readonly entityTypeName: string = "Application"
+    protected readonly modelAccessor: Prisma.ApplicationDelegate<Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined> & { create: any; };
+    protected readonly isPrimaryKeyComposite: boolean = false;
+
     constructor(
         readonly prismaClient: PrismaAupClient
-    ){}
-
-    async createApplication(createAppInputDto: CreateApplicationInputDto): Promise<Application | null> {
-        let newAppDto: ApplicationDto | null = null;
-        
-        try {
-            newAppDto = await this.prismaClient.application.create({
-                data: {
-                    name: createAppInputDto.name,
-                    url: createAppInputDto.url
-                }
-            }
-        )
-        } catch(error) {
-            console.warn(
-                JSON.stringify(
-                    {
-                        message: "Couldn't create an application record!",
-                        error,
-                        createAppInputDto
-                    }
-                )
-            )
-            return null;
-        }
-
-        return mapApplicationDtoToDomain(newAppDto)
+    ){
+        super()
+        this.modelAccessor = this.prismaClient.application
     }
 
     async getApplicationById(id: string): Promise<Application | null> {

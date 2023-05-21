@@ -1,7 +1,5 @@
 import { v4 as uuid } from 'uuid';
 import { UserPersistenceService } from '../user-persistence-service';
-import { User } from '../../models/user';
-import { Metadata, SourceMetadata } from '../../models/common';
 import { DateTime } from 'luxon';
 import { prismaMockClients } from '../../../shared/test-helpers/mock-prisma';
 
@@ -31,23 +29,8 @@ describe('UserPersistenceService should be able to ', () => {
             mockUserDto
             )
 
-        const newUser = await userPersistenceService.createUser(createUserInputDto)
+        const newUserDto = await userPersistenceService.createUser(createUserInputDto)
         
-        const expectedUser = new User(
-            mockUserDto.id,
-            mockUserDto.email,
-            mockUserDto.emailIsVerified,
-            mockUserDto.username,
-            mockUserDto.isActive,
-            mockUserDto.firstName,
-            mockUserDto.lastName,
-            new Metadata(
-                DateTime.fromJSDate(mockUserDto.createdAt),
-                DateTime.fromJSDate(mockUserDto.updatedAt),
-                new SourceMetadata()
-            )
-        )
-
-        expect(newUser).toEqual(expectedUser)
+        expect(newUserDto).toEqual(mockUserDto)
     })
 })

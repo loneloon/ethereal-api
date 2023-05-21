@@ -1,6 +1,7 @@
-import { PrismaClient as PrismaAupClient, UserProjection as UserProjectionDto } from "@prisma-dual-cli/generated/aup-client";
+import { PrismaClient as PrismaAupClient, UserProjection as UserProjectionDto, Prisma } from "@prisma-dual-cli/generated/aup-client";
 import { UserProjection } from "../models/user-projection";
 import { mapUserProjectionDtoToDomain } from "../mappers/dto-to-domain";
+import { PrismaBasedPersistenceService } from "../../shared/persistence-service";
 
 
 export interface CreateUserProjectionInputDto {
@@ -16,38 +17,22 @@ export interface UpdateUserProjectionInputDto {
     alias: string | null
 }
 
-export class UserProjectionPersistenceService {
+export class UserProjectionPersistenceService extends PrismaBasedPersistenceService<
+    PrismaAupClient,
+    Prisma.UserProjectionDelegate<Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined>,
+    UserProjectionDto,
+    CreateUserProjectionInputDto,
+    UpdateUserProjectionInputDto
+> {
+    protected readonly entityTypeName: string = "UserProjection"
+    protected readonly modelAccessor: Prisma.UserProjectionDelegate<Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined> & { create: any; };
+    protected readonly isPrimaryKeyComposite: boolean = true;
+
     constructor(
         readonly prismaClient: PrismaAupClient
-    ){}
-    
-    async createUserProjection(createUserProjectionInputDto: CreateUserProjectionInputDto): Promise<UserProjection | null>{
-        let newUserProjectionDto: UserProjectionDto | null = null;
-        
-        try {
-            newUserProjectionDto = await this.prismaClient.userProjection.create({
-                data: {
-                    // TODO: TRIP, VERIFY STRING FORMAT
-                    userId: createUserProjectionInputDto.userId,
-                    appId: createUserProjectionInputDto.appId,
-                    alias: createUserProjectionInputDto.alias
-                }
-            }
-        )
-        } catch(error) {
-            console.warn(
-                JSON.stringify(
-                    {
-                        message: "Couldn't create a user projection record!",
-                        error,
-                        createUserProjectionInputDto
-                    }
-                )
-            )
-            return null;
-        }
-
-        return mapUserProjectionDtoToDomain(newUserProjectionDto)
+    ){
+        super()
+        this.modelAccessor = this.prismaClient.userProjection
     }
 
     async getAllProjections(): Promise<UserProjection[]> {
