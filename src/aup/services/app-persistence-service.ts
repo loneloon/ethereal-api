@@ -1,8 +1,13 @@
-import { PrismaClient as PrismaAupClient, Application as ApplicationDto, Prisma } from "@prisma-dual-cli/generated/aup-client";
-import { Application } from '../models/application'
-import { mapApplicationDtoToDomain } from "../mappers/dto-to-domain";
 import { PrismaBasedPersistenceService } from "../../shared/persistence-service";
+import { 
+    PrismaClient as PrismaAupClient, 
+    Application as ApplicationDto, 
+    Prisma 
+} from "@prisma-dual-cli/generated/aup-client";
 
+
+// BE CAREFUL WITH FIELD NAMES IN THESE INTERFACES,
+// THEY MUST MATCH THE SCHEMA EXACTLY!
 
 export interface CreateApplicationInputDto {
     name: string,
@@ -14,6 +19,7 @@ export interface UpdateApplicationInputDto {
     url: string,
     isActive: boolean
 }
+
 
 export class AppPersistenceService extends PrismaBasedPersistenceService<
     PrismaAupClient,

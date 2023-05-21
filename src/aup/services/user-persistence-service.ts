@@ -1,7 +1,13 @@
-import { PrismaClient as PrismaAupClient, User as UserDto, Prisma } from "@prisma-dual-cli/generated/aup-client";
-import _ from "lodash";
 import { PrismaBasedPersistenceService } from "../../shared/persistence-service";
+import { 
+    PrismaClient as PrismaAupClient, 
+    User as UserDto, 
+    Prisma 
+} from "@prisma-dual-cli/generated/aup-client";
 
+
+// BE CAREFUL WITH FIELD NAMES IN THESE INTERFACES,
+// THEY MUST MATCH THE SCHEMA EXACTLY!
 
 export interface CreateUserInputDto {
     email: string,
@@ -10,8 +16,6 @@ export interface CreateUserInputDto {
     lastName?: string
 }
 
-// BE CAREFUL WITH FIELD NAMES IN THESE,
-// THEY MUST MATCH THE SCHEMA EXACTLY
 export interface UpdateUserInputDto {
     email?: string,
     emailIsVerified?: boolean,
@@ -20,6 +24,7 @@ export interface UpdateUserInputDto {
     firstName?: string,
     lastName?: string
 }
+
 
 export class UserPersistenceService extends PrismaBasedPersistenceService<
     PrismaAupClient,

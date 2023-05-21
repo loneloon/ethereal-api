@@ -1,6 +1,13 @@
-import { PrismaClient as PrismaAupClient, UserProjection as UserProjectionDto, Prisma } from "@prisma-dual-cli/generated/aup-client";
 import { PrismaBasedPersistenceService } from "../../shared/persistence-service";
+import { 
+    PrismaClient as PrismaAupClient, 
+    UserProjection as UserProjectionDto, 
+    Prisma 
+} from "@prisma-dual-cli/generated/aup-client";
 
+
+// BE CAREFUL WITH FIELD NAMES IN THESE INTERFACES,
+// THEY MUST MATCH THE SCHEMA EXACTLY!
 
 export interface CreateUserProjectionInputDto {
     userId: string,
@@ -8,12 +15,11 @@ export interface CreateUserProjectionInputDto {
     alias: string | null
 }
 
-// BE CAREFUL WITH FIELD NAMES IN THESE,
-// THEY MUST MATCH THE SCHEMA EXACTLY
 export interface UpdateUserProjectionInputDto {
     isActive: boolean,
     alias: string | null
 }
+
 
 export class UserProjectionPersistenceService extends PrismaBasedPersistenceService<
     PrismaAupClient,
