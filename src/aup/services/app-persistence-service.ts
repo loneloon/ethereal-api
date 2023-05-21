@@ -33,111 +33,26 @@ export class AppPersistenceService extends PrismaBasedPersistenceService<
         this.modelAccessor = this.prismaClient.application
     }
 
-    async getApplicationById(id: string): Promise<Application | null> {
-        const appDto: ApplicationDto | null = await this.prismaClient.application.findUnique({
-            where: {
-                id
-            }
-        })
-
-        if (!appDto) {
-            console.warn(JSON.stringify(
-                {
-                    message: `Couldn't find application record with this id: ${id}`
-                }
-            ))
-            return null
-        }
-
-        return mapApplicationDtoToDomain(appDto)
+    async createApplication(createApplicationInputDto: CreateApplicationInputDto): Promise<ApplicationDto| null> {
+        return await this.createEntity(createApplicationInputDto)
     }
 
-    async getAllApplications(): Promise<Application[]> {
-        const appDtos: ApplicationDto[] = await this.prismaClient.application.findMany()
-
-        return appDtos.map((appDto) => mapApplicationDtoToDomain(appDto))
+    async getApplicationById(id: string): Promise<ApplicationDto | null> {
+        return await this.getUniqueEntity("id", id)
     }
 
-    async updateApplication(id: string, updateApplicationInputDto: UpdateApplicationInputDto) {
-        const oldApplicationDto = await this.prismaClient.application.findUnique({
-            where: {
-                id
-            }
-        })
+    async getAllApplications(): Promise<ApplicationDto[]> {
+        return await this.getAllEntities()
+    }
 
-        if (!oldApplicationDto) {
-            console.warn(
-                JSON.stringify({
-                    message: `Couldn't find application record with this id: ${id}`
-                })
-            )
-            return null
-        }
-
-        // Removing possible undefined values from update input
-        const validatedUpdateInput = Object.entries(updateApplicationInputDto).reduce((filtered, [key, value]) => {
-            
-            if ( value !== undefined ) {
-                return {
-                    ...filtered,
-                    [key]: value
-                }
-            }
-            return filtered
-            
-        }, {})
-
-        let updatedApplicationDto: ApplicationDto | null = null;
-
-        try {
-            updatedApplicationDto = await this.prismaClient.application.update({
-                where: {
-                    id
-                },
-                data: validatedUpdateInput
-            })
-        } catch(error) {
-            console.warn(
-                JSON.stringify(
-                    {
-                        message: `Skipping update for application with this id: ${id}`,
-                        error,
-                        validatedUpdateInput
-                    }
-                )
-            )
-            return null
-        }
-
-        return mapApplicationDtoToDomain(updatedApplicationDto)
+    async updateApplication(id: string, updateApplicationInputDto: UpdateApplicationInputDto): Promise<ApplicationDto | null> {
+        return await this.updateEntity("id", id, updateApplicationInputDto)
     }
 
     /**
      * @deprecated Instead of hard deleting application records, deactivate them by setting 'isActive' flag to false
      */
-    async deleteApplication(id: string): Promise<Application | null> {
-        console.warn(JSON.stringify(
-            {
-                message: `Forcefully deleting application with this id: ${id}. Please consider deactivating applications (soft-delete) next time instead of losing data :)`
-            }
-        ))
-
-        let deletedApplicationDto: ApplicationDto | null = null;
-
-        try{
-            deletedApplicationDto = await this.prismaClient.application.delete({
-                where: {
-                    id
-                }
-            })
-        } catch(error) {
-            console.warn(JSON.stringify({
-                message: `Couldn't hard delete application with this id: ${id}`,
-                error
-            }))
-            return null
-        }
-        
-        return mapApplicationDtoToDomain(deletedApplicationDto)
+    async deleteApplication(id: string): Promise<ApplicationDto | null> {
+        return await this.deleteEntity("id", id)
     }
 }

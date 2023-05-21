@@ -41,7 +41,6 @@ export class UserProjectionPersistenceService extends PrismaBasedPersistenceServ
         return await this.getAllEntities()
     }
 
-    // TODO: Abstract search entity method
     async getAllProjectionsByUserId(userId: string): Promise<UserProjectionDto[]> {
         return await this.searchEntities({
             userId
