@@ -4,7 +4,7 @@ import {
   UserProjection as UserProjectionDto,
 } from "@prisma/client";
 import { User } from "../models/user";
-import { Metadata, SourceMetadata } from "../models/common";
+import { Metadata, SourceMetadata } from "@shared/models/common";
 import { DateTime } from "luxon";
 import { UserProjection } from "../models/user-projection";
 import { Application } from "../models/application";
