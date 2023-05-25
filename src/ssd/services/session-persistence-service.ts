@@ -11,10 +11,11 @@ import {
 export interface CreateSessionInputDto {
   expiresAt: Date;
   deviceId: string;
+  userId: string;
 }
 
 export interface UpdateSessionInputDto {
-  isActive: boolean;
+  isActive?: boolean;
 }
 
 export class SessionPersistenceService extends PrismaBasedPersistenceService<
@@ -30,12 +31,43 @@ export class SessionPersistenceService extends PrismaBasedPersistenceService<
   protected readonly modelAccessor: Prisma.SessionDelegate<
     Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined
   > & { create: any; findMany: any; findUnique: any; update: any; delete: any };
-  protected readonly isPrimaryKeyComposite: boolean = true;
+  protected readonly isPrimaryKeyComposite: boolean = false;
 
   constructor(readonly prismaClient: PrismaSsdClient) {
     super();
     this.modelAccessor = this.prismaClient.session;
   }
 
-  // TODO: CRUD
+  async createSession(
+    createSessionInputDto: CreateSessionInputDto
+  ): Promise<SessionDto | null> {
+    return await this.createEntity(createSessionInputDto);
+  }
+
+  async getSessionById(id: string): Promise<SessionDto | null> {
+    return await this.getUniqueEntity("id", id);
+  }
+
+  async getSessionsByUserId(userId: string): Promise<SessionDto[]> {
+    return await this.searchEntities({ userId });
+  }
+
+  async getSessionsByDeviceId(deviceId: string): Promise<SessionDto[]> {
+    return await this.searchEntities({ deviceId });
+  }
+
+  async getAllSessions(): Promise<SessionDto[]> {
+    return await this.getAllEntities();
+  }
+
+  async updateSession(
+    id: string,
+    updateSessionInputDto: UpdateSessionInputDto
+  ): Promise<SessionDto | null> {
+    return await this.updateEntity("id", id, updateSessionInputDto);
+  }
+
+  async deleteSession(id: string): Promise<SessionDto | null> {
+    return await this.deleteEntity("id", id);
+  }
 }
