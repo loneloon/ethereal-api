@@ -11,12 +11,12 @@ import {
 export interface CreateUserProjectionInputDto {
   userId: string;
   appId: string;
-  alias: string | null;
+  alias?: string;
 }
 
 export interface UpdateUserProjectionInputDto {
-  isActive: boolean;
-  alias: string | null;
+  isActive?: boolean;
+  alias?: string;
 }
 
 export class UserProjectionPersistenceService extends PrismaBasedPersistenceService<

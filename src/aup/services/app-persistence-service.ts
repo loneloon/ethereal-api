@@ -14,9 +14,9 @@ export interface CreateApplicationInputDto {
 }
 
 export interface UpdateApplicationInputDto {
-  name: string;
-  url: string;
-  isActive: boolean;
+  name?: string;
+  url?: string;
+  isActive?: boolean;
 }
 
 export class AppPersistenceService extends PrismaBasedPersistenceService<
