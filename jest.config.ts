@@ -16,4 +16,7 @@ export default {
     "!**/__tests__/**/data/*.*",
     "!**/*.perf.ts",
   ],
+  moduleNameMapper: {
+    "@shared/(.*)": "<rootDir>/src/shared/$1",
+  },
 };

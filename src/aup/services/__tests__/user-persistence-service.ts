@@ -1,7 +1,9 @@
 import { v4 as uuid } from "uuid";
 import { UserPersistenceService } from "../user-persistence-service";
 import { DateTime } from "luxon";
-import { prismaMockClients } from "../../../shared/test-helpers/mock-prisma";
+import { prismaMockClients } from "@shared/test-helpers/mock-prisma";
+import { User } from "../../models/user";
+import { Metadata, SourceMetadata } from "@shared/models/common";
 
 describe("UserPersistenceService should be able to ", () => {
   test("CREATE a USER record", async () => {
@@ -26,12 +28,25 @@ describe("UserPersistenceService should be able to ", () => {
       username: "lizlizzard69",
     };
 
-    prismaMockClients.aupClient.user.create.mockResolvedValue(mockUserDto);
-
-    const newUserDto = await userPersistenceService.createUser(
-      createUserInputDto
+    const expectedUser = new User(
+      mockUserDto.id,
+      mockUserDto.email,
+      mockUserDto.emailIsVerified,
+      mockUserDto.username,
+      mockUserDto.isActive,
+      mockUserDto.firstName,
+      mockUserDto.lastName,
+      new Metadata(
+        DateTime.fromJSDate(mockUserDto.createdAt),
+        DateTime.fromJSDate(mockUserDto.updatedAt),
+        new SourceMetadata()
+      )
     );
 
-    expect(newUserDto).toEqual(mockUserDto);
+    prismaMockClients.aupClient.user.create.mockResolvedValue(mockUserDto);
+
+    const newUser = await userPersistenceService.createUser(createUserInputDto);
+
+    expect(newUser).toEqual(expectedUser);
   });
 });

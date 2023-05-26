@@ -1,4 +1,4 @@
-import { PrismaBasedPersistenceService } from "../../shared/persistence-service";
+import { PrismaBasedPersistenceService } from "@shared/persistence-service";
 import {
   PrismaClient as PrismaAupClient,
   Application as ApplicationDto,
