@@ -1,5 +1,8 @@
 import { v4 as uuid } from "uuid";
-import { UserPersistenceService } from "../user-persistence-service";
+import {
+  CreateUserInputDto,
+  UserPersistenceService,
+} from "../user-persistence-service";
 import { DateTime } from "luxon";
 import { prismaMockClients } from "@shared/test-helpers/mock-prisma";
 import { User } from "../../models/user";
@@ -14,18 +17,17 @@ describe("UserPersistenceService should be able to ", () => {
     const mockUserDto = {
       id: uuid(),
       email: "liz69@ethereal.com",
-      username: "lizlizzard69",
+      username: null,
       emailIsVerified: false,
       isActive: true,
       createdAt: DateTime.now().toJSDate(),
       updatedAt: DateTime.now().toJSDate(),
-      firstName: "Lizzie",
-      lastName: "Lizzardson",
+      firstName: null,
+      lastName: null,
     };
 
-    const createUserInputDto = {
+    const createUserInputDto: CreateUserInputDto = {
       email: "liz69@ethereal.com",
-      username: "lizlizzard69",
     };
 
     const expectedUser = new User(

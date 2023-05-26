@@ -2,7 +2,7 @@ import {
   Application as ApplicationDto,
   User as UserDto,
   UserProjection as UserProjectionDto,
-} from "@prisma/client";
+} from "@prisma-dual-cli/generated/aup-client";
 import { User } from "../models/user";
 import { Metadata, SourceMetadata } from "@shared/models/common";
 import { DateTime } from "luxon";
