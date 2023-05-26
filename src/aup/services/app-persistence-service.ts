@@ -4,6 +4,8 @@ import {
   Application as ApplicationDto,
   Prisma,
 } from "@prisma-dual-cli/generated/aup-client";
+import { Application } from "../models/application";
+import { mapApplicationDtoToDomain } from "../mappers/dto-to-domain";
 
 // BE CAREFUL WITH FIELD NAMES IN THESE INTERFACES,
 // THEY MUST MATCH THE SCHEMA EXACTLY!
@@ -41,29 +43,48 @@ export class AppPersistenceService extends PrismaBasedPersistenceService<
 
   async createApplication(
     createApplicationInputDto: CreateApplicationInputDto
-  ): Promise<ApplicationDto | null> {
-    return await this.createEntity(createApplicationInputDto);
+  ): Promise<Application | null> {
+    const newAppDto: ApplicationDto | null = await this.createEntity(
+      createApplicationInputDto
+    );
+
+    return newAppDto ? mapApplicationDtoToDomain(newAppDto) : null;
   }
 
-  async getApplicationById(id: string): Promise<ApplicationDto | null> {
-    return await this.getUniqueEntity("id", id);
+  async getApplicationById(id: string): Promise<Application | null> {
+    const appDto: ApplicationDto | null = await this.getUniqueEntity("id", id);
+
+    return appDto ? mapApplicationDtoToDomain(appDto) : null;
   }
 
-  async getAllApplications(): Promise<ApplicationDto[]> {
-    return await this.getAllEntities();
+  async getAllApplications(): Promise<Application[]> {
+    const appDtos: ApplicationDto[] = await this.getAllEntities();
+
+    return appDtos.map((appDto) => mapApplicationDtoToDomain(appDto));
   }
 
   async updateApplication(
     id: string,
     updateApplicationInputDto: UpdateApplicationInputDto
-  ): Promise<ApplicationDto | null> {
-    return await this.updateEntity("id", id, updateApplicationInputDto);
+  ): Promise<Application | null> {
+    const updatedAppDto: ApplicationDto | null = await this.updateEntity(
+      "id",
+      id,
+      updateApplicationInputDto
+    );
+
+    return updatedAppDto ? mapApplicationDtoToDomain(updatedAppDto) : null;
   }
 
   /**
    * @deprecated Instead of hard deleting application records, deactivate them by setting 'isActive' flag to false
    */
-  async deleteApplication(id: string): Promise<ApplicationDto | null> {
-    return await this.deleteEntity("id", id);
+  async deleteApplication(id: string): Promise<Application | null> {
+    const deletedAppDto: ApplicationDto | null = await this.deleteEntity(
+      "id",
+      id
+    );
+
+    return deletedAppDto ? mapApplicationDtoToDomain(deletedAppDto) : null;
   }
 }

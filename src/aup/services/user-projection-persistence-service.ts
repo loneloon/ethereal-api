@@ -4,6 +4,8 @@ import {
   UserProjection as UserProjectionDto,
   Prisma,
 } from "@prisma-dual-cli/generated/aup-client";
+import { UserProjection } from "../models/user-projection";
+import { mapUserProjectionDtoToDomain } from "../mappers/dto-to-domain";
 
 // BE CAREFUL WITH FIELD NAMES IN THESE INTERFACES,
 // THEY MUST MATCH THE SCHEMA EXACTLY!
@@ -41,45 +43,70 @@ export class UserProjectionPersistenceService extends PrismaBasedPersistenceServ
 
   async createUserProjection(
     createUserProjectionInputDto: CreateUserProjectionInputDto
-  ): Promise<UserProjectionDto | null> {
-    return await this.createEntity(createUserProjectionInputDto);
+  ): Promise<UserProjection | null> {
+    const newUserProjectionDto: UserProjectionDto | null =
+      await this.createEntity(createUserProjectionInputDto);
+
+    return newUserProjectionDto
+      ? mapUserProjectionDtoToDomain(newUserProjectionDto)
+      : null;
   }
 
-  async getAllProjections(): Promise<UserProjectionDto[]> {
-    return await this.getAllEntities();
+  async getAllProjections(): Promise<UserProjection[]> {
+    const allUserProjectionDtos: UserProjectionDto[] =
+      await this.getAllEntities();
+
+    return allUserProjectionDtos.map((projectionDto) =>
+      mapUserProjectionDtoToDomain(projectionDto)
+    );
   }
 
-  async getAllProjectionsByUserId(
-    userId: string
-  ): Promise<UserProjectionDto[]> {
-    return await this.searchEntities({
+  async getProjectionsByUserId(userId: string): Promise<UserProjection[]> {
+    const userProjectionDtos: UserProjectionDto[] = await this.searchEntities({
       userId,
     });
+
+    return userProjectionDtos.map((projectionDto) =>
+      mapUserProjectionDtoToDomain(projectionDto)
+    );
   }
 
-  async getAllProjectionsByAppId(appId: string): Promise<UserProjectionDto[]> {
-    return await this.searchEntities({
+  async getProjectionsByAppId(appId: string): Promise<UserProjection[]> {
+    const userProjectionDtos: UserProjectionDto[] = await this.searchEntities({
       appId,
     });
+
+    return userProjectionDtos.map((projectionDto) =>
+      mapUserProjectionDtoToDomain(projectionDto)
+    );
   }
 
   async getProjectionByAppAndUserId(
     appId: string,
     userId: string
-  ): Promise<UserProjectionDto | null> {
-    return await this.getUniqueEntity("appId_userId", { appId, userId });
+  ): Promise<UserProjection | null> {
+    const userProjectionDto: UserProjectionDto | null =
+      await this.getUniqueEntity("appId_userId", { appId, userId });
+    return userProjectionDto
+      ? mapUserProjectionDtoToDomain(userProjectionDto)
+      : null;
   }
 
   async updateUserProjection(
     appId: string,
     userId: string,
     updateUserProjectionInputDto: UpdateUserProjectionInputDto
-  ): Promise<UserProjectionDto | null> {
-    return await this.updateEntity(
-      "appId_userId",
-      { appId, userId },
-      updateUserProjectionInputDto
-    );
+  ): Promise<UserProjection | null> {
+    const updatedUserProjectionDto: UserProjectionDto | null =
+      await this.updateEntity(
+        "appId_userId",
+        { appId, userId },
+        updateUserProjectionInputDto
+      );
+
+    return updatedUserProjectionDto
+      ? mapUserProjectionDtoToDomain(updatedUserProjectionDto)
+      : null;
   }
 
   /**
@@ -88,7 +115,12 @@ export class UserProjectionPersistenceService extends PrismaBasedPersistenceServ
   async deleteUserProjection(
     appId: string,
     userId: string
-  ): Promise<UserProjectionDto | null> {
-    return await this.deleteEntity("appId_userId", { appId, userId });
+  ): Promise<UserProjection | null> {
+    const deletedUserProjectionDto: UserProjectionDto | null =
+      await this.deleteEntity("appId_userId", { appId, userId });
+
+    return deletedUserProjectionDto
+      ? mapUserProjectionDtoToDomain(deletedUserProjectionDto)
+      : null;
   }
 }
