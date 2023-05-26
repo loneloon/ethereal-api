@@ -15,7 +15,7 @@ model User {
   id                String            @id @default(uuid())
   email             String            @unique
   emailIsVerified   Boolean           @default(false)
-  username          String     
+  username          String?                
   projections       UserProjection[]
   isActive          Boolean           @default(true)
   firstName         String?

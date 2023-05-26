@@ -5,7 +5,7 @@ export class User {
     readonly id: string,
     readonly email: string,
     readonly emailIsVerified: boolean,
-    readonly username: string,
+    readonly username: string | null,
     readonly isActive: boolean,
     readonly firstName: string | null,
     readonly lastName: string | null,

@@ -12,9 +12,6 @@ import { User } from "../models/user";
 
 export interface CreateUserInputDto {
   email: string;
-  username: string;
-  firstName?: string;
-  lastName?: string;
 }
 
 export interface UpdateUserInputDto {
