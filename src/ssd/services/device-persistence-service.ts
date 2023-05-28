@@ -14,9 +14,8 @@ import {
 // THEY MUST MATCH THE SCHEMA EXACTLY!
 
 export interface CreateDeviceArgsDto {
-  expiresAt: Date;
-  deviceId: string;
-  userId: string;
+  userAgent: string;
+  ip: string;
 }
 
 // Some UpdateInput interfaces may be left unfilled
@@ -62,6 +61,18 @@ export class DevicePersistenceService extends PrismaBasedPersistenceService<
   async getAllDevices(): Promise<Device[]> {
     const deviceDtos: DeviceDto[] = await this.getAllEntities();
     return deviceDtos.map((deviceDto) => mapDeviceDtoToDomain(deviceDto));
+  }
+
+  async getDeviceByUserAgentAndIp(
+    userAgent: string,
+    ip: string
+  ): Promise<Device | null> {
+    const deviceDto = await this.getUniqueEntity("userAgent_ip", {
+      userAgent,
+      ip,
+    });
+
+    return deviceDto ? mapDeviceDtoToDomain(deviceDto) : null;
   }
 
   async updateDevice(

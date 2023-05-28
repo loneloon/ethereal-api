@@ -1,5 +1,5 @@
 import { hash, genSalt } from "bcrypt";
-import { range } from "lodash";
+import { isEqual } from "lodash";
 
 export class SecretProcessingService {
   public static async generatePasswordHashAndSalt(
@@ -11,5 +11,15 @@ export class SecretProcessingService {
     const passHash: string = await hash(password, salt);
 
     return [passHash, salt];
+  }
+
+  public static async checkPasswordAgainstHash(
+    password: string,
+    hashRecord: string,
+    saltRecord: string
+  ): Promise<boolean> {
+    const trialHash: string = await hash(password, saltRecord);
+
+    return isEqual(trialHash, hashRecord);
   }
 }

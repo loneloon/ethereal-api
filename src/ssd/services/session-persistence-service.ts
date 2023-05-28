@@ -59,9 +59,12 @@ export class SessionPersistenceService extends PrismaBasedPersistenceService<
     return sessionDtos.map((sessionDto) => mapSessionDtoToDomain(sessionDto));
   }
 
-  async getSessionsByDeviceId(deviceId: string): Promise<Session[]> {
-    const sessionDtos: SessionDto[] = await this.searchEntities({ deviceId });
-    return sessionDtos.map((sessionDto) => mapSessionDtoToDomain(sessionDto));
+  async getSessionByDeviceId(deviceId: string): Promise<Session | null> {
+    const sessionDto: SessionDto | null = await this.getUniqueEntity(
+      "deviceId",
+      deviceId
+    );
+    return sessionDto ? mapSessionDtoToDomain(sessionDto) : null;
   }
 
   async getAllSessions(): Promise<Session[]> {

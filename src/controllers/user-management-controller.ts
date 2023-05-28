@@ -11,6 +11,8 @@ import { SecretProcessingService } from "../ssd/services/secret-processing-servi
 import { User } from "../aup/models/user";
 import { Secret } from "../ssd/models/secret";
 import { Session } from "../ssd/models/session";
+import { Device } from "../ssd/models/device";
+import { DateTime } from "luxon";
 
 export class UserManagementController {
   constructor(
@@ -78,6 +80,17 @@ export class UserManagementController {
         JSON.stringify({
           message: "Cannot perform user update operation!",
           error,
+        })
+      );
+
+      return null;
+    }
+
+    if (!targetUser.isActive) {
+      console.warn(
+        JSON.stringify({
+          message:
+            "Cannot perform user update operation: target user is deactivated!",
         })
       );
 
@@ -208,8 +221,130 @@ export class UserManagementController {
     userAgent: string,
     ip: string
   ): Promise<Session | null> {
-    // TODO
-    return;
+    const targetUser: User | null =
+      await this.userPersistenceService.getUserByEmail(email);
+
+    if (!targetUser) {
+      console.warn(
+        JSON.stringify({
+          message:
+            "Cannot perform user sign-in operation: user with this email doesn't exist!",
+        })
+      );
+      return null;
+    }
+
+    if (!targetUser.isActive) {
+      console.warn(
+        JSON.stringify({
+          message:
+            "Cannot perform user sign-in operation: target user is deactivated!",
+        })
+      );
+
+      return null;
+    }
+
+    let userDevice: Device | null =
+      await this.devicePersistenceService.getDeviceByUserAgentAndIp(
+        userAgent,
+        ip
+      );
+    let session: Session | null = null;
+
+    if (userDevice) {
+      // Checking if user is already signed in on this device
+      if (userDevice.sessionId) {
+        session = await this.sessionPersistenceService.getSessionByDeviceId(
+          userDevice.sessionId
+        );
+
+        if (session?.isActive) {
+          return session;
+        }
+      }
+    } else {
+      console.log(
+        JSON.stringify({
+          message: "User is signing in with a new device!",
+          userId: targetUser.id,
+          userAgent,
+          ip,
+        })
+      );
+
+      const newUserDevice = await this.devicePersistenceService.createDevice({
+        userAgent,
+        ip,
+      });
+
+      if (!newUserDevice) {
+        console.warn(
+          JSON.stringify({
+            message:
+              "Couldn't create user device record. Aborting user sign-in operation!",
+          })
+        );
+
+        return null;
+      }
+
+      userDevice = newUserDevice;
+    }
+
+    const secret: Secret | null =
+      await this.secretPersistenceService.getSecretByUserId(targetUser.id);
+
+    if (!secret) {
+      console.warn(
+        JSON.stringify({
+          message:
+            "Warning! Registered user doesn't have a password associated with the account! This should never happen, please investigate current sign-up flow ASAP!",
+          userId: targetUser.id,
+        })
+      );
+
+      return null;
+    }
+
+    const isValidPassword: boolean =
+      await SecretProcessingService.checkPasswordAgainstHash(
+        password,
+        secret.passHash,
+        secret.salt
+      );
+
+    if (!isValidPassword) {
+      console.warn(
+        JSON.stringify({
+          message: "Incorrect credentials provided! Cannot sign-in!",
+        })
+      );
+
+      return null;
+    }
+
+    // TechDebt: The default value for this should be defined by platform config
+    const sessionExpiryDate: DateTime = DateTime.now().plus({ hours: 24 });
+
+    session = await this.sessionPersistenceService.createSession({
+      deviceId: userDevice.id,
+      userId: targetUser.id,
+      expiresAt: sessionExpiryDate.toJSDate(),
+    });
+
+    if (!session) {
+      console.warn(
+        JSON.stringify({
+          message:
+            "Couldn't create new user session record! Aborting sign-in operation!",
+        })
+      );
+
+      return null;
+    }
+
+    return session;
   }
 
   // AppUser (aka UserProjection in AUP model) refers to a connection between PlatformUser and an Application

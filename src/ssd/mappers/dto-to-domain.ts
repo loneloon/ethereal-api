@@ -38,5 +38,10 @@ export function mapSecretDtoToDomain(secretDto: SecretDto): Secret {
 }
 
 export function mapDeviceDtoToDomain(deviceDto: DeviceDto): Device {
-  return new Device(deviceDto.id, deviceDto.userAgent, deviceDto.ip);
+  return new Device(
+    deviceDto.id,
+    deviceDto.sessionId ?? null,
+    deviceDto.userAgent,
+    deviceDto.ip
+  );
 }
