@@ -65,6 +65,12 @@ export class UserPersistenceService extends PrismaBasedPersistenceService<
     return userDto ? mapUserDtoToDomain(userDto) : null;
   }
 
+  async getUserByEmail(email: string): Promise<User | null> {
+    const userDto: UserDto | null = await this.getUniqueEntity("email", email);
+
+    return userDto ? mapUserDtoToDomain(userDto) : null;
+  }
+
   async updateUser(
     id: string,
     updateUserInputDto: UpdateUserInputDto
