@@ -17,7 +17,7 @@ export interface CreateSessionArgsDto {
 }
 
 export interface UpdateSessionArgsDto {
-  isActive?: boolean;
+  expiresAt: Date;
 }
 
 export class SessionPersistenceService extends PrismaBasedPersistenceService<

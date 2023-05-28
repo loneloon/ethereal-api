@@ -13,7 +13,6 @@ datasource db {
 
 model Session {
     id                String            @id @default(uuid())
-    isActive          Boolean           @default(true)
     expiresAt         DateTime          
     device            Device            @relation(fields: [deviceId], references: [id])
     deviceId          String            @unique

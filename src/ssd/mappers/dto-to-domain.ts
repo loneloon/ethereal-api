@@ -12,7 +12,6 @@ import { Metadata, SourceMetadata } from "@shared/models/common";
 export function mapSessionDtoToDomain(sessionDto: SessionDto): Session {
   return new Session(
     sessionDto.id,
-    sessionDto.isActive,
     DateTime.fromJSDate(sessionDto.expiresAt),
     sessionDto.deviceId,
     sessionDto.userId,

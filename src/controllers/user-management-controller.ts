@@ -170,27 +170,57 @@ export class UserManagementController {
     });
   }
 
-  private async resolvePlatformUserBySessionId(
-    sessionId: string
-  ): Promise<User> {
+  private async resolveSessionById(sessionId: string): Promise<Session | null> {
+    // Verifying if session is actually expired (this is technically redundant)
     const session: Session | null =
       await this.sessionPersistenceService.getSessionById(sessionId);
 
     if (!session) {
-      throw new Error(
+      console.warn(
         JSON.stringify({
-          message:
-            "Cannot resolve platform user, provided session id doesn't exist!",
+          message: "User session doesn't exist!",
           sessionId,
         })
       );
+      return null;
     }
 
-    if (session && !session.isActive) {
+    if (session && session.isExpired) {
+      console.warn(
+        JSON.stringify({
+          message: "User session has expired! Wiping session record!",
+          sessionId,
+        })
+      );
+
+      const deletedSession: Session | null =
+        await this.sessionPersistenceService.deleteSession(sessionId);
+
+      if (!deletedSession) {
+        throw new Error(
+          JSON.stringify({
+            message:
+              "Couldn't delete expired session! Please remove the session manually!",
+            sessionId,
+          })
+        );
+      }
+
+      return null;
+    }
+
+    return session;
+  }
+
+  private async resolvePlatformUserBySessionId(
+    sessionId: string
+  ): Promise<User> {
+    const session: Session | null = await this.resolveSessionById(sessionId);
+
+    if (!session) {
       throw new Error(
         JSON.stringify({
-          message:
-            "Cannot resolve platform user, provided session id refers to expired session!",
+          message: "Cannot resolve platform user, session doesn't exist!",
           sessionId,
         })
       );
@@ -255,11 +285,15 @@ export class UserManagementController {
     if (userDevice) {
       // Checking if user is already signed in on this device
       if (userDevice.sessionId) {
-        session = await this.sessionPersistenceService.getSessionByDeviceId(
-          userDevice.sessionId
-        );
+        try {
+          // If session is expired it will wipe itself and resolve to null
+          session = await this.resolveSessionById(userDevice.sessionId);
+        } catch (error) {
+          console.warn(error);
+        }
 
-        if (session?.isActive) {
+        // If session for this device exists and is active it will be returned
+        if (session) {
           return session;
         }
       }
