@@ -10,13 +10,13 @@ import { mapSecretDtoToDomain } from "../mappers/dto-to-domain";
 // BE CAREFUL WITH FIELD NAMES IN THESE INTERFACES,
 // THEY MUST MATCH THE SCHEMA EXACTLY!
 
-export interface CreateSecretInputDto {
+export interface CreateSecretArgsDto {
   userId: string;
   passHash: string;
   salt: string;
 }
 
-export interface UpdateSecretInputDto {
+export interface UpdateSecretArgsDto {
   passHash?: string;
   salt?: string;
 }
@@ -27,8 +27,8 @@ export class SecretPersistenceService extends PrismaBasedPersistenceService<
     Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined
   >,
   SecretDto,
-  CreateSecretInputDto,
-  UpdateSecretInputDto
+  CreateSecretArgsDto,
+  UpdateSecretArgsDto
 > {
   protected readonly entityTypeName: string = "Secret";
   protected readonly modelAccessor: Prisma.SecretDelegate<
@@ -42,10 +42,10 @@ export class SecretPersistenceService extends PrismaBasedPersistenceService<
   }
 
   async createSecret(
-    createSecretInputDto: CreateSecretInputDto
+    createSecretArgsDto: CreateSecretArgsDto
   ): Promise<Secret | null> {
     const createdSecretDto: SecretDto | null = await this.createEntity(
-      createSecretInputDto
+      createSecretArgsDto
     );
     return createdSecretDto ? mapSecretDtoToDomain(createdSecretDto) : null;
   }
@@ -60,12 +60,12 @@ export class SecretPersistenceService extends PrismaBasedPersistenceService<
 
   async updateSecret(
     userId: string,
-    updateSecretInputDto: UpdateSecretInputDto
+    updateSecretArgsDto: UpdateSecretArgsDto
   ): Promise<Secret | null> {
     const updatedSecretDto: SecretDto | null = await this.updateEntity(
       "userId",
       userId,
-      updateSecretInputDto
+      updateSecretArgsDto
     );
     return updatedSecretDto ? mapSecretDtoToDomain(updatedSecretDto) : null;
   }

@@ -10,13 +10,13 @@ import { mapSessionDtoToDomain } from "../mappers/dto-to-domain";
 // BE CAREFUL WITH FIELD NAMES IN THESE INTERFACES,
 // THEY MUST MATCH THE SCHEMA EXACTLY!
 
-export interface CreateSessionInputDto {
+export interface CreateSessionArgsDto {
   expiresAt: Date;
   deviceId: string;
   userId: string;
 }
 
-export interface UpdateSessionInputDto {
+export interface UpdateSessionArgsDto {
   isActive?: boolean;
 }
 
@@ -26,8 +26,8 @@ export class SessionPersistenceService extends PrismaBasedPersistenceService<
     Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined
   >,
   SessionDto,
-  CreateSessionInputDto,
-  UpdateSessionInputDto
+  CreateSessionArgsDto,
+  UpdateSessionArgsDto
 > {
   protected readonly entityTypeName: string = "Session";
   protected readonly modelAccessor: Prisma.SessionDelegate<
@@ -41,10 +41,10 @@ export class SessionPersistenceService extends PrismaBasedPersistenceService<
   }
 
   async createSession(
-    createSessionInputDto: CreateSessionInputDto
+    createSessionArgsDto: CreateSessionArgsDto
   ): Promise<Session | null> {
     const createdSessionDto: SessionDto | null = await this.createEntity(
-      createSessionInputDto
+      createSessionArgsDto
     );
     return createdSessionDto ? mapSessionDtoToDomain(createdSessionDto) : null;
   }
@@ -71,12 +71,12 @@ export class SessionPersistenceService extends PrismaBasedPersistenceService<
 
   async updateSession(
     id: string,
-    updateSessionInputDto: UpdateSessionInputDto
+    updateSessionArgsDto: UpdateSessionArgsDto
   ): Promise<Session | null> {
     const updatedSessionDto: SessionDto | null = await this.updateEntity(
       "id",
       id,
-      updateSessionInputDto
+      updateSessionArgsDto
     );
     return updatedSessionDto ? mapSessionDtoToDomain(updatedSessionDto) : null;
   }

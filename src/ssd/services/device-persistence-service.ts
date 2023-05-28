@@ -13,7 +13,7 @@ import {
 // BE CAREFUL WITH FIELD NAMES IN THESE INTERFACES,
 // THEY MUST MATCH THE SCHEMA EXACTLY!
 
-export interface CreateDeviceInputDto {
+export interface CreateDeviceArgsDto {
   expiresAt: Date;
   deviceId: string;
   userId: string;
@@ -23,7 +23,7 @@ export interface CreateDeviceInputDto {
 // in cases where persistence updates are not currently needed,
 // but changes are possible in the future.
 
-export interface UpdateDeviceInputDto {}
+export interface UpdateDeviceArgsDto {}
 
 export class DevicePersistenceService extends PrismaBasedPersistenceService<
   PrismaSsdClient,
@@ -31,8 +31,8 @@ export class DevicePersistenceService extends PrismaBasedPersistenceService<
     Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined
   >,
   DeviceDto,
-  CreateDeviceInputDto,
-  UpdateDeviceInputDto
+  CreateDeviceArgsDto,
+  UpdateDeviceArgsDto
 > {
   protected readonly entityTypeName: string = "Device";
   protected readonly modelAccessor: Prisma.DeviceDelegate<
@@ -46,10 +46,10 @@ export class DevicePersistenceService extends PrismaBasedPersistenceService<
   }
 
   async createDevice(
-    createDeviceInputDto: CreateDeviceInputDto
+    createDeviceArgsDto: CreateDeviceArgsDto
   ): Promise<Device | null> {
     const createdDeviceDto: DeviceDto | null = await this.createEntity(
-      createDeviceInputDto
+      createDeviceArgsDto
     );
     return createdDeviceDto ? mapDeviceDtoToDomain(createdDeviceDto) : null;
   }
@@ -66,12 +66,12 @@ export class DevicePersistenceService extends PrismaBasedPersistenceService<
 
   async updateDevice(
     id: string,
-    updateDeviceInputDto: UpdateDeviceInputDto
+    updateDeviceArgsDto: UpdateDeviceArgsDto
   ): Promise<Device | null> {
     const updatedDeviceDto: DeviceDto | null = await this.updateEntity(
       "id",
       id,
-      updateDeviceInputDto
+      updateDeviceArgsDto
     );
     return updatedDeviceDto ? mapDeviceDtoToDomain(updatedDeviceDto) : null;
   }

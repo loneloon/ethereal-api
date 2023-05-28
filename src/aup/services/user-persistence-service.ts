@@ -10,11 +10,11 @@ import { User } from "../models/user";
 // BE CAREFUL WITH FIELD NAMES IN THESE INTERFACES,
 // THEY MUST MATCH THE SCHEMA EXACTLY!
 
-export interface CreateUserInputDto {
+export interface CreateUserArgsDto {
   email: string;
 }
 
-export interface UpdateUserInputDto {
+export interface UpdateUserArgsDto {
   email?: string;
   emailIsVerified?: boolean;
   isActive?: boolean;
@@ -29,8 +29,8 @@ export class UserPersistenceService extends PrismaBasedPersistenceService<
     Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined
   >,
   UserDto,
-  CreateUserInputDto,
-  UpdateUserInputDto
+  CreateUserArgsDto,
+  UpdateUserArgsDto
 > {
   protected readonly entityTypeName: string = "User";
   protected readonly modelAccessor: Prisma.UserDelegate<
@@ -43,11 +43,9 @@ export class UserPersistenceService extends PrismaBasedPersistenceService<
     this.modelAccessor = this.prismaClient.user;
   }
 
-  async createUser(
-    createUserInputDto: CreateUserInputDto
-  ): Promise<User | null> {
+  async createUser(createUserArgsDto: CreateUserArgsDto): Promise<User | null> {
     const newUserDto: UserDto | null = await this.createEntity(
-      createUserInputDto
+      createUserArgsDto
     );
 
     return newUserDto ? mapUserDtoToDomain(newUserDto) : null;
@@ -73,12 +71,12 @@ export class UserPersistenceService extends PrismaBasedPersistenceService<
 
   async updateUser(
     id: string,
-    updateUserInputDto: UpdateUserInputDto
+    updateUserArgsDto: UpdateUserArgsDto
   ): Promise<User | null> {
     const updatedUserDto: UserDto | null = await this.updateEntity(
       "id",
       id,
-      updateUserInputDto
+      updateUserArgsDto
     );
 
     return updatedUserDto ? mapUserDtoToDomain(updatedUserDto) : null;

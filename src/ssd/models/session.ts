@@ -7,6 +7,7 @@ export class Session {
     readonly isActive: boolean,
     readonly expiresAt: DateTime,
     readonly deviceId: string,
+    readonly userId: string,
     readonly metadata: Metadata
   ) {}
 

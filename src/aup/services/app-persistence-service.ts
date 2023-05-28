@@ -10,12 +10,12 @@ import { mapApplicationDtoToDomain } from "../mappers/dto-to-domain";
 // BE CAREFUL WITH FIELD NAMES IN THESE INTERFACES,
 // THEY MUST MATCH THE SCHEMA EXACTLY!
 
-export interface CreateApplicationInputDto {
+export interface CreateApplicationArgsDto {
   name: string;
   url: string;
 }
 
-export interface UpdateApplicationInputDto {
+export interface UpdateApplicationArgsDto {
   name?: string;
   url?: string;
   isActive?: boolean;
@@ -27,8 +27,8 @@ export class AppPersistenceService extends PrismaBasedPersistenceService<
     Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined
   >,
   ApplicationDto,
-  CreateApplicationInputDto,
-  UpdateApplicationInputDto
+  CreateApplicationArgsDto,
+  UpdateApplicationArgsDto
 > {
   protected readonly entityTypeName: string = "Application";
   protected readonly modelAccessor: Prisma.ApplicationDelegate<
@@ -42,10 +42,10 @@ export class AppPersistenceService extends PrismaBasedPersistenceService<
   }
 
   async createApplication(
-    createApplicationInputDto: CreateApplicationInputDto
+    createApplicationArgsDto: CreateApplicationArgsDto
   ): Promise<Application | null> {
     const newAppDto: ApplicationDto | null = await this.createEntity(
-      createApplicationInputDto
+      createApplicationArgsDto
     );
 
     return newAppDto ? mapApplicationDtoToDomain(newAppDto) : null;
@@ -65,12 +65,12 @@ export class AppPersistenceService extends PrismaBasedPersistenceService<
 
   async updateApplication(
     id: string,
-    updateApplicationInputDto: UpdateApplicationInputDto
+    updateApplicationArgsDto: UpdateApplicationArgsDto
   ): Promise<Application | null> {
     const updatedAppDto: ApplicationDto | null = await this.updateEntity(
       "id",
       id,
-      updateApplicationInputDto
+      updateApplicationArgsDto
     );
 
     return updatedAppDto ? mapApplicationDtoToDomain(updatedAppDto) : null;

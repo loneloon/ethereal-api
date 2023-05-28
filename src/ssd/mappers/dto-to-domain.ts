@@ -15,6 +15,7 @@ export function mapSessionDtoToDomain(sessionDto: SessionDto): Session {
     sessionDto.isActive,
     DateTime.fromJSDate(sessionDto.expiresAt),
     sessionDto.deviceId,
+    sessionDto.userId,
     new Metadata(
       DateTime.fromJSDate(sessionDto.createdAt),
       DateTime.fromJSDate(sessionDto.updatedAt),

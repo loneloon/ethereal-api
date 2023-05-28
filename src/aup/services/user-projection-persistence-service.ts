@@ -10,13 +10,13 @@ import { mapUserProjectionDtoToDomain } from "../mappers/dto-to-domain";
 // BE CAREFUL WITH FIELD NAMES IN THESE INTERFACES,
 // THEY MUST MATCH THE SCHEMA EXACTLY!
 
-export interface CreateUserProjectionInputDto {
+export interface CreateUserProjectionArgsDto {
   userId: string;
   appId: string;
   alias?: string;
 }
 
-export interface UpdateUserProjectionInputDto {
+export interface UpdateUserProjectionArgsDto {
   isActive?: boolean;
   alias?: string;
 }
@@ -27,8 +27,8 @@ export class UserProjectionPersistenceService extends PrismaBasedPersistenceServ
     Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined
   >,
   UserProjectionDto,
-  CreateUserProjectionInputDto,
-  UpdateUserProjectionInputDto
+  CreateUserProjectionArgsDto,
+  UpdateUserProjectionArgsDto
 > {
   protected readonly entityTypeName: string = "UserProjection";
   protected readonly modelAccessor: Prisma.UserProjectionDelegate<
@@ -42,10 +42,10 @@ export class UserProjectionPersistenceService extends PrismaBasedPersistenceServ
   }
 
   async createUserProjection(
-    createUserProjectionInputDto: CreateUserProjectionInputDto
+    createUserProjectionArgsDto: CreateUserProjectionArgsDto
   ): Promise<UserProjection | null> {
     const newUserProjectionDto: UserProjectionDto | null =
-      await this.createEntity(createUserProjectionInputDto);
+      await this.createEntity(createUserProjectionArgsDto);
 
     return newUserProjectionDto
       ? mapUserProjectionDtoToDomain(newUserProjectionDto)
@@ -95,13 +95,13 @@ export class UserProjectionPersistenceService extends PrismaBasedPersistenceServ
   async updateUserProjection(
     appId: string,
     userId: string,
-    updateUserProjectionInputDto: UpdateUserProjectionInputDto
+    updateUserProjectionArgsDto: UpdateUserProjectionArgsDto
   ): Promise<UserProjection | null> {
     const updatedUserProjectionDto: UserProjectionDto | null =
       await this.updateEntity(
         "appId_userId",
         { appId, userId },
-        updateUserProjectionInputDto
+        updateUserProjectionArgsDto
       );
 
     return updatedUserProjectionDto

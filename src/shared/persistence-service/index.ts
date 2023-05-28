@@ -2,8 +2,8 @@ export abstract class PrismaBasedPersistenceService<
   PrismaClientType,
   PrismaModelDelegate,
   EntityDto,
-  CreateEntityInputDto,
-  UpdateEntityInputDto
+  CreateEntityArgsDto,
+  UpdateEntityArgsDto
 > {
   protected abstract entityTypeName: string;
   protected abstract modelAccessor: PrismaModelDelegate & {
@@ -18,7 +18,7 @@ export abstract class PrismaBasedPersistenceService<
   abstract prismaClient: PrismaClientType;
 
   protected async createEntity(
-    createEntityInputDto: CreateEntityInputDto
+    createEntityArgsDto: CreateEntityArgsDto
   ): Promise<EntityDto | null> {
     let newEntityDto: EntityDto | null = null;
 
@@ -26,7 +26,7 @@ export abstract class PrismaBasedPersistenceService<
       newEntityDto = await this.modelAccessor.create({
         data: {
           // TODO: TRIP, VERIFY STRING FORMAT
-          ...createEntityInputDto,
+          ...createEntityArgsDto,
         },
       });
     } catch (error) {
@@ -34,7 +34,7 @@ export abstract class PrismaBasedPersistenceService<
         JSON.stringify({
           message: `Couldn't create a ${this.entityTypeName} record!`,
           error,
-          createEntityInputDto,
+          createEntityArgsDto,
         })
       );
       return null;
@@ -131,11 +131,11 @@ export abstract class PrismaBasedPersistenceService<
   protected async updateEntity(
     primaryKeyFieldName: string,
     primaryKeyValue: string | { [key: string]: any },
-    updateEntityInputDto: UpdateEntityInputDto
+    updateEntityArgsDto: UpdateEntityArgsDto
   ): Promise<EntityDto | null> {
     // Removing possible undefined values from update input
     const validatedUpdateInput = Object.entries(
-      updateEntityInputDto as { [key: string]: any }
+      updateEntityArgsDto as { [key: string]: any }
     ).reduce((filtered, [key, value]) => {
       if (value !== undefined) {
         return {

@@ -1,6 +1,6 @@
 import { v4 as uuid } from "uuid";
 import {
-  CreateUserInputDto,
+  CreateUserArgsDto,
   UserPersistenceService,
 } from "../user-persistence-service";
 import { DateTime } from "luxon";
@@ -26,7 +26,7 @@ describe("UserPersistenceService should be able to ", () => {
       lastName: null,
     };
 
-    const createUserInputDto: CreateUserInputDto = {
+    const createUserArgsDto: CreateUserArgsDto = {
       email: "liz69@ethereal.com",
     };
 
@@ -47,7 +47,7 @@ describe("UserPersistenceService should be able to ", () => {
 
     prismaMockClients.aupClient.user.create.mockResolvedValue(mockUserDto);
 
-    const newUser = await userPersistenceService.createUser(createUserInputDto);
+    const newUser = await userPersistenceService.createUser(createUserArgsDto);
 
     expect(newUser).toEqual(expectedUser);
   });
