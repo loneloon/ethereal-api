@@ -4,6 +4,8 @@ import {
   Session as SessionDto,
   Prisma,
 } from "@prisma-dual-cli/generated/ssd-client";
+import { Session } from "../models/session";
+import { mapSessionDtoToDomain } from "../mappers/dto-to-domain";
 
 // BE CAREFUL WITH FIELD NAMES IN THESE INTERFACES,
 // THEY MUST MATCH THE SCHEMA EXACTLY!
@@ -40,34 +42,50 @@ export class SessionPersistenceService extends PrismaBasedPersistenceService<
 
   async createSession(
     createSessionInputDto: CreateSessionInputDto
-  ): Promise<SessionDto | null> {
-    return await this.createEntity(createSessionInputDto);
+  ): Promise<Session | null> {
+    const createdSessionDto: SessionDto | null = await this.createEntity(
+      createSessionInputDto
+    );
+    return createdSessionDto ? mapSessionDtoToDomain(createdSessionDto) : null;
   }
 
-  async getSessionById(id: string): Promise<SessionDto | null> {
-    return await this.getUniqueEntity("id", id);
+  async getSessionById(id: string): Promise<Session | null> {
+    const sessionDto: SessionDto | null = await this.getUniqueEntity("id", id);
+    return sessionDto ? mapSessionDtoToDomain(sessionDto) : null;
   }
 
-  async getSessionsByUserId(userId: string): Promise<SessionDto[]> {
-    return await this.searchEntities({ userId });
+  async getSessionsByUserId(userId: string): Promise<Session[]> {
+    const sessionDtos: SessionDto[] = await this.searchEntities({ userId });
+    return sessionDtos.map((sessionDto) => mapSessionDtoToDomain(sessionDto));
   }
 
-  async getSessionsByDeviceId(deviceId: string): Promise<SessionDto[]> {
-    return await this.searchEntities({ deviceId });
+  async getSessionsByDeviceId(deviceId: string): Promise<Session[]> {
+    const sessionDtos: SessionDto[] = await this.searchEntities({ deviceId });
+    return sessionDtos.map((sessionDto) => mapSessionDtoToDomain(sessionDto));
   }
 
-  async getAllSessions(): Promise<SessionDto[]> {
-    return await this.getAllEntities();
+  async getAllSessions(): Promise<Session[]> {
+    const sessionDtos: SessionDto[] = await this.getAllEntities();
+    return sessionDtos.map((sessionDto) => mapSessionDtoToDomain(sessionDto));
   }
 
   async updateSession(
     id: string,
     updateSessionInputDto: UpdateSessionInputDto
-  ): Promise<SessionDto | null> {
-    return await this.updateEntity("id", id, updateSessionInputDto);
+  ): Promise<Session | null> {
+    const updatedSessionDto: SessionDto | null = await this.updateEntity(
+      "id",
+      id,
+      updateSessionInputDto
+    );
+    return updatedSessionDto ? mapSessionDtoToDomain(updatedSessionDto) : null;
   }
 
-  async deleteSession(id: string): Promise<SessionDto | null> {
-    return await this.deleteEntity("id", id);
+  async deleteSession(id: string): Promise<Session | null> {
+    const deletedSessionDto: SessionDto | null = await this.deleteEntity(
+      "id",
+      id
+    );
+    return deletedSessionDto ? mapSessionDtoToDomain(deletedSessionDto) : null;
   }
 }

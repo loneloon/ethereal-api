@@ -6,6 +6,8 @@ import { DevicePersistenceService } from "../ssd/services/device-persistence-ser
 import { SecretPersistenceService } from "../ssd/services/secret-persistence-service";
 import { SessionPersistenceService } from "../ssd/services/session-persistence-service";
 import { SecretProcessingService } from "../ssd/services/secret-processing-service";
+import { User } from "../aup/models/user";
+import { Secret } from "../ssd/models/secret";
 
 export class UserManagementController {
   constructor(
@@ -20,7 +22,8 @@ export class UserManagementController {
   // PlatformUser (aka User in AUP model) refers to base/root user account
   // that acts as a central node to all application accounts that user may have
   async createPlatformUser(email: string, password: string) {
-    const createdUser = await this.userPersistenceService.createUser({ email });
+    const createdUser: User | null =
+      await this.userPersistenceService.createUser({ email });
 
     if (!createdUser) {
       console.warn(
@@ -33,11 +36,12 @@ export class UserManagementController {
 
     const [passHash, salt] =
       await SecretProcessingService.generatePasswordHashAndSalt(password);
-    const createdSecret = await this.secretPersistenceService.createSecret({
-      userId: createdUser.id,
-      passHash,
-      salt,
-    });
+    const createdSecret: Secret | null =
+      await this.secretPersistenceService.createSecret({
+        userId: createdUser.id,
+        passHash,
+        salt,
+      });
 
     // TODO: Map to DTO before returning
     return createdUser;

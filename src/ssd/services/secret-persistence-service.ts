@@ -4,6 +4,8 @@ import {
   Secret as SecretDto,
   Prisma,
 } from "@prisma-dual-cli/generated/ssd-client";
+import { Secret } from "../models/secret";
+import { mapSecretDtoToDomain } from "../mappers/dto-to-domain";
 
 // BE CAREFUL WITH FIELD NAMES IN THESE INTERFACES,
 // THEY MUST MATCH THE SCHEMA EXACTLY!
@@ -41,22 +43,38 @@ export class SecretPersistenceService extends PrismaBasedPersistenceService<
 
   async createSecret(
     createSecretInputDto: CreateSecretInputDto
-  ): Promise<SecretDto | null> {
-    return await this.createEntity(createSecretInputDto);
+  ): Promise<Secret | null> {
+    const createdSecretDto: SecretDto | null = await this.createEntity(
+      createSecretInputDto
+    );
+    return createdSecretDto ? mapSecretDtoToDomain(createdSecretDto) : null;
   }
 
-  async getSecretByUserId(userId: string): Promise<SecretDto | null> {
-    return await this.getUniqueEntity("userId", userId);
+  async getSecretByUserId(userId: string): Promise<Secret | null> {
+    const secretDto: SecretDto | null = await this.getUniqueEntity(
+      "userId",
+      userId
+    );
+    return secretDto ? mapSecretDtoToDomain(secretDto) : null;
   }
 
   async updateSecret(
     userId: string,
     updateSecretInputDto: UpdateSecretInputDto
-  ): Promise<SecretDto | null> {
-    return await this.updateEntity("userId", userId, updateSecretInputDto);
+  ): Promise<Secret | null> {
+    const updatedSecretDto: SecretDto | null = await this.updateEntity(
+      "userId",
+      userId,
+      updateSecretInputDto
+    );
+    return updatedSecretDto ? mapSecretDtoToDomain(updatedSecretDto) : null;
   }
 
-  async deleteSecret(userId: string): Promise<SecretDto | null> {
-    return await this.deleteEntity("userId", userId);
+  async deleteSecret(userId: string): Promise<Secret | null> {
+    const deletedSecretDto: SecretDto | null = await this.deleteEntity(
+      "userId",
+      userId
+    );
+    return deletedSecretDto ? mapSecretDtoToDomain(deletedSecretDto) : null;
   }
 }
