@@ -196,7 +196,7 @@ export class UserManagementController {
         await this.sessionPersistenceService.deleteSession(sessionId);
 
       if (!deletedSession) {
-        throw new Error(
+        console.warn(
           JSON.stringify({
             message:
               "Couldn't delete expired session! Please remove the session manually!",
@@ -383,29 +383,29 @@ export class UserManagementController {
   }
 
   async terminatePlatformUserSession(sessionId: string): Promise<void> {
-    let session: Session | null = null;
+    const session: Session | null = await this.resolveSessionById(sessionId);
 
-    try {
-      session = await this.resolveSessionById(sessionId);
-    } catch (error) {
-      console.warn(error);
+    if (!session) {
+      console.warn(
+        JSON.stringify({
+          message: "Cannot terminate user session: session doesn't exist!",
+        })
+      );
       return;
     }
 
-    if (session) {
-      const deletedSession = await this.sessionPersistenceService.deleteSession(
-        session.id
-      );
+    const deletedSession = await this.sessionPersistenceService.deleteSession(
+      session.id
+    );
 
-      // If session persistence operation is performed successfully (i.e. create, read, update, delete), a session instance will be returned
-      if (!deletedSession) {
-        console.warn(
-          JSON.stringify({
-            message:
-              "Couldn't terminate user session! Please remove the session record manually!",
-          })
-        );
-      }
+    // If session persistence operation is performed successfully (i.e. create, read, update, delete), a session instance will be returned
+    if (!deletedSession) {
+      console.warn(
+        JSON.stringify({
+          message:
+            "Couldn't terminate user session! Please remove the session record manually!",
+        })
+      );
     }
 
     return;
