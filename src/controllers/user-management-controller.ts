@@ -71,15 +71,14 @@ export class UserManagementController {
     sessionId: string,
     updateUserArgsDto: UpdateUserArgsDto
   ): Promise<User | null> {
-    let targetUser: User | null = null;
+    const targetUser: User | null = await this.resolvePlatformUserBySessionId(
+      sessionId
+    );
 
-    try {
-      targetUser = await this.resolvePlatformUserBySessionId(sessionId);
-    } catch (error) {
+    if (!targetUser) {
       console.warn(
         JSON.stringify({
-          message: "Cannot perform user update operation!",
-          error,
+          message: "Cannot perform user update operation: user doesn't exist!",
         })
       );
 
@@ -106,15 +105,15 @@ export class UserManagementController {
   }
 
   async deactivatePlatformUser(sessionId: string): Promise<User | null> {
-    let targetUser: User | null = null;
+    const targetUser: User | null = await this.resolvePlatformUserBySessionId(
+      sessionId
+    );
 
-    try {
-      targetUser = await this.resolvePlatformUserBySessionId(sessionId);
-    } catch (error) {
+    if (!targetUser) {
       console.warn(
         JSON.stringify({
-          message: "Cannot perform user deactivation operation!",
-          error,
+          message:
+            "Cannot perform user deactivation operation: user doesn't exist!",
         })
       );
 
@@ -214,16 +213,17 @@ export class UserManagementController {
 
   private async resolvePlatformUserBySessionId(
     sessionId: string
-  ): Promise<User> {
+  ): Promise<User | null> {
     const session: Session | null = await this.resolveSessionById(sessionId);
 
     if (!session) {
-      throw new Error(
+      console.warn(
         JSON.stringify({
           message: "Cannot resolve platform user, session doesn't exist!",
           sessionId,
         })
       );
+      return null;
     }
 
     const user: User | null = await this.userPersistenceService.getUserById(
@@ -232,7 +232,7 @@ export class UserManagementController {
 
     if (!user) {
       // This can happen if a user record was hard deleted but related sessions were not terminated/deleted before/after that
-      throw new Error(
+      console.warn(
         JSON.stringify({
           message:
             "Warning! There is an active session record that is linked to a user that doesn't exist anymore. Cannot resolve platform user!",
@@ -240,6 +240,7 @@ export class UserManagementController {
           userId: session.userId,
         })
       );
+      return null;
     }
 
     return user;
@@ -379,6 +380,35 @@ export class UserManagementController {
     }
 
     return session;
+  }
+
+  async terminatePlatformUserSession(sessionId: string): Promise<void> {
+    let session: Session | null = null;
+
+    try {
+      session = await this.resolveSessionById(sessionId);
+    } catch (error) {
+      console.warn(error);
+      return;
+    }
+
+    if (session) {
+      const deletedSession = await this.sessionPersistenceService.deleteSession(
+        session.id
+      );
+
+      // If session persistence operation is performed successfully (i.e. create, read, update, delete), a session instance will be returned
+      if (!deletedSession) {
+        console.warn(
+          JSON.stringify({
+            message:
+              "Couldn't terminate user session! Please remove the session record manually!",
+          })
+        );
+      }
+    }
+
+    return;
   }
 
   // AppUser (aka UserProjection in AUP model) refers to a connection between PlatformUser and an Application
