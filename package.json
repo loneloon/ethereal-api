@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc --build",
     "test": "jest",
-    "start": "node -r tsconfig-paths/register ./dist/index.js",
+    "start": "TS_NODE_BASEURL=./dist node -r tsconfig-paths/register ./dist/index.js",
     "init-prisma-sqlite": "npx prisma init --datasource-provider sqlite",
     "prisma-migrate-aup-dev": "npx prisma migrate dev --schema prisma/aup-schema.prisma --name init",
     "prisma-migrate-ssd-dev": "npx prisma migrate dev --schema prisma/ssd-schema.prisma --name init",
