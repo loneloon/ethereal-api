@@ -363,6 +363,7 @@ export class UserManagementController {
     const sessionExpiryDate: DateTime = DateTime.now().plus({ hours: 24 });
 
     session = await this.sessionPersistenceService.createSession({
+      id: await SecretProcessingService.generateSessionId(),
       deviceId: userDevice.id,
       userId: targetUser.id,
       expiresAt: sessionExpiryDate.toJSDate(),

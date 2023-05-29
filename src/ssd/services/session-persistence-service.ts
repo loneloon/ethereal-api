@@ -11,6 +11,7 @@ import { mapSessionDtoToDomain } from "../mappers/dto-to-domain";
 // THEY MUST MATCH THE SCHEMA EXACTLY!
 
 export interface CreateSessionArgsDto {
+  id: string;
   expiresAt: Date;
   deviceId: string;
   userId: string;

@@ -1,5 +1,7 @@
 import { hash, genSalt } from "bcrypt";
-import { isEqual } from "lodash";
+import { isEqual, range } from "lodash";
+import { DateTime } from "luxon";
+import * as emoji from "emojilib";
 
 export class SecretProcessingService {
   public static async generatePasswordHashAndSalt(
@@ -21,5 +23,31 @@ export class SecretProcessingService {
     const trialHash: string = await hash(password, saltRecord);
 
     return isEqual(trialHash, hashRecord);
+  }
+
+  public static async generateSessionId(): Promise<string> {
+    const firstBitGroup = range(8)
+      .map(
+        () =>
+          Object.keys(emoji)[
+            Math.floor(Math.random() * (Object.keys(emoji).length - 1))
+          ]
+      )
+      .join("");
+    const secondBitGroup = DateTime.now().toISOTime()!.substring(0, 8);
+    const thirdBitGroup = range(8)
+      .map(
+        () =>
+          Object.keys(emoji)[
+            Math.floor(Math.random() * (Object.keys(emoji).length - 1))
+          ]
+      )
+      .join("");
+    const fourthBitGroup = DateTime.now().toISODate()!.split("-").join("");
+
+    const sourceKey =
+      firstBitGroup + secondBitGroup + thirdBitGroup + fourthBitGroup;
+
+    return await hash(sourceKey, 10);
   }
 }

@@ -46,6 +46,7 @@
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
+    "emojilib": "^3.0.10",
     "lodash": "^4.17.21",
     "luxon": "^3.3.0",
     "prisma": "^4.14.1"

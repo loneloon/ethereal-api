@@ -1881,6 +1881,11 @@ emoji-regex@^8.0.0:
   resolved "https://registry.yarnpkg.com/emoji-regex/-/emoji-regex-8.0.0.tgz#e818fd69ce5ccfcb404594f842963bf53164cc37"
   integrity sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==
 
+emojilib@^3.0.10:
+  version "3.0.10"
+  resolved "https://registry.yarnpkg.com/emojilib/-/emojilib-3.0.10.tgz#e2f9baaee5fabbc1e011ebd3aa2761b65e4da02f"
+  integrity sha512-VQtCRroFykPTJaoEBEGFg5tI+rEluabjuaVDDbSftDtiRJ5GuqRG/LGV1mmDzkJP4bh5rzuEBOafMN68/YXQcQ==
+
 end-of-stream@^1.1.0:
   version "1.4.4"
   resolved "https://registry.yarnpkg.com/end-of-stream/-/end-of-stream-1.4.4.tgz#5ae64a5f45057baf3626ec14da0ca5e4b2431eb0"
