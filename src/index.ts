@@ -1,14 +1,48 @@
-import { DateTime } from "luxon";
 import clients from "./prisma-clients";
-import { SecretProcessingService } from "./ssd/services/secret-processing-service";
+import { AppPersistenceService } from "./aup/services/app-persistence-service";
+import { UserPersistenceService } from "./aup/services/user-persistence-service";
+import { UserProjectionPersistenceService } from "./aup/services/user-projection-persistence-service";
+import { SessionPersistenceService } from "./ssd/services/session-persistence-service";
+import { SecretPersistenceService } from "./ssd/services/secret-persistence-service";
+import { DevicePersistenceService } from "./ssd/services/device-persistence-service";
+import { UserManagementController } from "./controllers/user-management-controller";
 
 async function main(): Promise<void> {
-  const testPass = "96986wordLul";
+  // THIS IS A TEMPORARY SETUP FOR TESTING CONTROLLERS ON THE FLY
+  //
+  // TODO:
+  //    - UNIT TESTS FOR SERVICES AND CONTROLLERS
+  //    - DOMAIN TO DTO MAPPERS FOR AUP AND SSD
+  //    - APP USER FLOW FOR USER MANAGEMENT CONTROLLER
+  //    - APP MANAGEMENT CONTROLLER
+  //    - ROLES AND PERMISSIONS
+  //    - CONSIDER USING DECORATORS TO RESOLVE SESSION AND USER STATE ON OPERATION BASIS (ALSO APPLICABLE FOR PERMISSION CHECKS)
+  const applicationPersistenceService = new AppPersistenceService(
+    clients.aupClient
+  );
+  const userPersistenceService = new UserPersistenceService(clients.aupClient);
+  const userProjectionPersistenceService = new UserProjectionPersistenceService(
+    clients.aupClient
+  );
 
-  const [hash, salt] =
-    await SecretProcessingService.generatePasswordHashAndSalt(testPass);
+  const sessionPersistenceService = new SessionPersistenceService(
+    clients.ssdClient
+  );
+  const secretPersistenceService = new SecretPersistenceService(
+    clients.ssdClient
+  );
+  const devicePersistenceService = new DevicePersistenceService(
+    clients.ssdClient
+  );
 
-  console.log(hash, salt);
+  const userManagementController = new UserManagementController(
+    userPersistenceService,
+    userProjectionPersistenceService,
+    applicationPersistenceService,
+    sessionPersistenceService,
+    secretPersistenceService,
+    devicePersistenceService
+  );
 }
 
 main()
