@@ -1,4 +1,3 @@
-import clients from "./prisma-clients";
 import { AppPersistenceService } from "./aup/services/app-persistence-service";
 import { UserPersistenceService } from "./aup/services/user-persistence-service";
 import { UserProjectionPersistenceService } from "./aup/services/user-projection-persistence-service";
@@ -6,11 +5,17 @@ import { SessionPersistenceService } from "./ssd/services/session-persistence-se
 import { SecretPersistenceService } from "./ssd/services/secret-persistence-service";
 import { DevicePersistenceService } from "./ssd/services/device-persistence-service";
 import { UserManagementController } from "./controllers/user-management-controller";
+import clients from "./prisma-clients";
+import express from "express";
+import cors from "cors";
+
+const DEFAULT_PORT: number = 8000;
 
 async function main(): Promise<void> {
   // THIS IS A TEMPORARY SETUP FOR TESTING CONTROLLERS ON THE FLY
   //
   // TODO:
+  //    - STRING VALIDATORS FOR EMAIL, PASS, ETC. INSIDE CONTROLLER METHODS
   //    - UNIT TESTS FOR SERVICES AND CONTROLLERS
   //    - DOMAIN TO DTO MAPPERS FOR AUP AND SSD
   //    - APP USER FLOW FOR USER MANAGEMENT CONTROLLER
@@ -43,6 +48,21 @@ async function main(): Promise<void> {
     secretPersistenceService,
     devicePersistenceService
   );
+
+  const app: express.Application = express();
+  app.use(cors());
+  app.use(express.urlencoded());
+  app.use(express.json());
+
+  app.get("/", (req, res) => {
+    res.send(`Ethereal API v${process.env.API_VERSION}`);
+  });
+
+  app.listen(DEFAULT_PORT, () => {
+    console.log(
+      `[${process.env.SYSTEM_ID}:v${process.env.API_VERSION}]: Listening to requests on port ${DEFAULT_PORT}...`
+    );
+  });
 }
 
 main()
