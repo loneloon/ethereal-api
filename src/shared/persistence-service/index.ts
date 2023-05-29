@@ -191,7 +191,7 @@ export abstract class PrismaBasedPersistenceService<
   ): Promise<EntityDto | null> {
     console.warn(
       JSON.stringify({
-        message: `Forcefully deleting ${this.entityTypeName} record. Please consider deactivating users (soft-delete) next time instead of losing data :)`,
+        message: `Deleting ${this.entityTypeName} record!`,
         primaryKey: { [primaryKeyFieldName]: primaryKeyValue },
       })
     );
