@@ -30,6 +30,30 @@ export class UserManagementController {
     readonly devicePersistenceService: DevicePersistenceService
   ) {}
 
+  private async createPlatformUserSecret(
+    userId: string,
+    password: string
+  ): Promise<Secret> {
+    const [passHash, salt] =
+      await SecretProcessingService.generatePasswordHashAndSalt(password);
+    const newSecret: Secret | null =
+      await this.secretPersistenceService.createSecret({
+        userId,
+        passHash,
+        salt,
+      });
+
+    if (!newSecret) {
+      throw new Error(
+        JSON.stringify({
+          message: "Couldn't create platform user's secret record!",
+        })
+      );
+    }
+
+    return newSecret;
+  }
+
   // PlatformUser (aka User in AUP model) refers to base/root user account
   // that acts as a central node to all application accounts that user may have
   async createPlatformUser(email: string, password: string): Promise<void> {
@@ -46,10 +70,11 @@ export class UserManagementController {
       );
     }
 
-    const createdUser: User | null =
-      await this.userPersistenceService.createUser({ email });
+    const newUser: User | null = await this.userPersistenceService.createUser({
+      email,
+    });
 
-    if (!createdUser) {
+    if (!newUser) {
       throw new Error(
         JSON.stringify({
           message: "Couldn't create platform user record!",
@@ -57,28 +82,32 @@ export class UserManagementController {
       );
     }
 
-    const [passHash, salt] =
-      await SecretProcessingService.generatePasswordHashAndSalt(password);
-    const createdSecret: Secret | null =
-      await this.secretPersistenceService.createSecret({
-        userId: createdUser.id,
-        passHash,
-        salt,
-      });
-
-    if (!createdSecret) {
-      console.warn(
-        JSON.stringify({
-          message:
-            "Couldn't create a record of platform user's secret! Aborting user creation!",
-        })
+    try {
+      const newUserSecret: Secret = await this.createPlatformUserSecret(
+        newUser.id,
+        password
+      );
+    } catch (error) {
+      // This looks nasty, because of the cascading errors (but we need them all)
+      // Refactor if you have a prettier solution
+      console.warn("Performing user rollback! Aborting user creation!");
+      const deletedUser = await this.userPersistenceService.deleteUser(
+        newUser.id
       );
 
-      this.userPersistenceService.deleteUser(createdUser.id);
+      if (!deletedUser) {
+        throw new Error(
+          JSON.stringify({
+            message:
+              "User rollback operation failed! Investigate persistence service state ASAP!",
+          })
+        );
+      }
 
       throw new Error(
         JSON.stringify({
-          message: "Couldn't create platform user record!",
+          message: "Couldn't create platform user!",
+          error,
         })
       );
     }
