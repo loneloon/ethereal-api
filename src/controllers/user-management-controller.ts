@@ -84,6 +84,30 @@ export class UserManagementController {
     }
   }
 
+  private async verifyPlatformUserPassword(
+    userId: string,
+    password: string
+  ): Promise<boolean> {
+    const secret: Secret | null =
+      await this.secretPersistenceService.getSecretByUserId(userId);
+
+    if (!secret) {
+      throw new Error(
+        JSON.stringify({
+          message:
+            "Warning! Registered user doesn't have a password associated with the account! This should never happen, please investigate current sign-up flow ASAP!",
+          userId,
+        })
+      );
+    }
+
+    return await SecretProcessingService.checkPasswordAgainstHash(
+      password,
+      secret.passHash,
+      secret.salt
+    );
+  }
+
   async checkEmailAvailability(email: string): Promise<boolean> {
     // INPUT VALIDATORS SECTION
     try {
@@ -309,6 +333,69 @@ export class UserManagementController {
     return user;
   }
 
+  private async resolvePlatformUserDevice(
+    userAgent: string,
+    ip: string,
+    userId: string
+  ): Promise<Device> {
+    let userDevice: Device | null =
+      await this.devicePersistenceService.getDeviceByUserAgentAndIp(
+        userAgent,
+        ip
+      );
+
+    if (!userDevice) {
+      console.log(
+        JSON.stringify({
+          message: "User is signing in with a new device!",
+          userId,
+          userAgent,
+          ip,
+        })
+      );
+
+      const newUserDevice = await this.devicePersistenceService.createDevice({
+        userAgent,
+        ip,
+      });
+
+      if (!newUserDevice) {
+        throw new Error(
+          JSON.stringify({
+            message: "Couldn't create user device record!",
+          })
+        );
+      }
+
+      return newUserDevice;
+    }
+
+    return userDevice;
+  }
+
+  private async createPlatformUserSession(
+    deviceId: string,
+    userId: string
+  ): Promise<Session> {
+    // TechDebt: The default value for this should be defined by platform config
+    const sessionExpiryDate: DateTime = DateTime.now().plus({ hours: 24 });
+
+    const newSession = await this.sessionPersistenceService.createSession({
+      id: await SecretProcessingService.generateSessionId(),
+      deviceId,
+      userId,
+      expiresAt: sessionExpiryDate.toJSDate(),
+    });
+
+    if (!newSession) {
+      throw new Error(
+        JSON.stringify({ message: "Couldn't create platform user session!" })
+      );
+    }
+
+    return newSession;
+  }
+
   async signInPlatformUser(
     email: string,
     password: string,
@@ -336,76 +423,29 @@ export class UserManagementController {
       );
     }
 
-    let userDevice: Device | null =
-      await this.devicePersistenceService.getDeviceByUserAgentAndIp(
-        userAgent,
-        ip
-      );
-    let session: Session | null = null;
+    let userDevice: Device = await this.resolvePlatformUserDevice(
+      userAgent,
+      ip,
+      targetUser.id
+    );
 
-    if (userDevice) {
-      // Checking if user is already signed in on this device
-      if (userDevice.sessionId) {
-        try {
-          // If session is expired it will wipe itself
-          session = await this.resolveSessionById(userDevice.sessionId);
-        } catch (error) {
-          console.warn(error);
-        }
-
+    if (userDevice.sessionId) {
+      try {
         // If session for this device exists and is active it will be returned
-        if (session) {
-          return session;
-        }
+        // If session exists but is expired it will be wiped and session resolver will throw
+        // If session doesn't exist session resolver will throw
+        return await this.resolveSessionById(userDevice.sessionId);
+      } catch (error) {
+        console.warn(error);
       }
-    } else {
-      console.log(
-        JSON.stringify({
-          message: "User is signing in with a new device!",
-          userId: targetUser.id,
-          userAgent,
-          ip,
-        })
-      );
-
-      const newUserDevice = await this.devicePersistenceService.createDevice({
-        userAgent,
-        ip,
-      });
-
-      if (!newUserDevice) {
-        throw new Error(
-          JSON.stringify({
-            message:
-              "Couldn't create user device record. Aborting user sign-in operation!",
-          })
-        );
-      }
-
-      userDevice = newUserDevice;
     }
 
-    const secret: Secret | null =
-      await this.secretPersistenceService.getSecretByUserId(targetUser.id);
+    const isMatchingPassword: boolean = await this.verifyPlatformUserPassword(
+      targetUser.id,
+      password
+    );
 
-    if (!secret) {
-      throw new Error(
-        JSON.stringify({
-          message:
-            "Warning! Registered user doesn't have a password associated with the account! This should never happen, please investigate current sign-up flow ASAP!",
-          userId: targetUser.id,
-        })
-      );
-    }
-
-    const isValidPassword: boolean =
-      await SecretProcessingService.checkPasswordAgainstHash(
-        password,
-        secret.passHash,
-        secret.salt
-      );
-
-    if (!isValidPassword) {
+    if (!isMatchingPassword) {
       throw new Error(
         JSON.stringify({
           message: "Incorrect credentials provided! Cannot sign-in!",
@@ -413,26 +453,7 @@ export class UserManagementController {
       );
     }
 
-    // TechDebt: The default value for this should be defined by platform config
-    const sessionExpiryDate: DateTime = DateTime.now().plus({ hours: 24 });
-
-    session = await this.sessionPersistenceService.createSession({
-      id: await SecretProcessingService.generateSessionId(),
-      deviceId: userDevice.id,
-      userId: targetUser.id,
-      expiresAt: sessionExpiryDate.toJSDate(),
-    });
-
-    if (!session) {
-      throw new Error(
-        JSON.stringify({
-          message:
-            "Couldn't create new user session record! Aborting sign-in operation!",
-        })
-      );
-    }
-
-    return session;
+    return await this.createPlatformUserSession(userDevice.id, targetUser.id);
   }
 
   async terminatePlatformUserSession(sessionId: string): Promise<void> {
