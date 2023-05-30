@@ -276,13 +276,15 @@ export class UserManagementController {
       []
     );
 
-    console.warn(
-      JSON.stringify({
-        message:
-          "Warning! Some of the user's sessions could not be terminated! Please remove them manually!",
-        unterminatedSessions,
-      })
-    );
+    if (unterminatedSessions) {
+      console.warn(
+        JSON.stringify({
+          message:
+            "Warning! Some of the user's sessions could not be terminated! Please remove them manually!",
+          unterminatedSessions,
+        })
+      );
+    }
 
     const deactivatedUser = await this.userPersistenceService.updateUser(
       targetUser.id,
@@ -299,6 +301,8 @@ export class UserManagementController {
       );
     }
   }
+
+  // TODO: Get all active sessions for user
 
   private async resolveSessionById(sessionId: string): Promise<Session> {
     // Verifying if session is actually expired (this is technically redundant)
