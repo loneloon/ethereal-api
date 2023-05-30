@@ -54,7 +54,9 @@ export class DevicePersistenceService extends PrismaBasedPersistenceService<
   }
 
   async getDeviceById(id: string): Promise<Device | null> {
-    const deviceDto: DeviceDto | null = await this.getUniqueEntity("id", id);
+    const deviceDto: DeviceDto | null = await this.getUniqueEntity("id", id, [
+      "session",
+    ]);
     return deviceDto ? mapDeviceDtoToDomain(deviceDto) : null;
   }
 
@@ -67,10 +69,14 @@ export class DevicePersistenceService extends PrismaBasedPersistenceService<
     userAgent: string,
     ip: string
   ): Promise<Device | null> {
-    const deviceDto = await this.getUniqueEntity("userAgent_ip", {
-      userAgent,
-      ip,
-    });
+    const deviceDto = await this.getUniqueEntity(
+      "userAgent_ip",
+      {
+        userAgent,
+        ip,
+      },
+      ["session"]
+    );
 
     return deviceDto ? mapDeviceDtoToDomain(deviceDto) : null;
   }

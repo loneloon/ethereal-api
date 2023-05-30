@@ -22,3 +22,31 @@ export const registerUser = async (
   });
   return;
 };
+
+export const signInUser = async (
+  context: { req: Request; res: Response },
+  userManagementController: UserManagementController
+): Promise<void> => {
+  const body = context.req.body;
+  const userAgent = context.req.headers["user-agent"] ?? "";
+  const ip = context.req.ip;
+
+  try {
+    const userSession = await userManagementController.signInPlatformUser(
+      body.email,
+      body.password,
+      userAgent,
+      ip
+    );
+    context.res
+      .cookie("Session", userSession.id, {
+        expires: userSession.expiresAt.toJSDate(),
+      })
+      .status(200)
+      .json({ message: "Authentication successful!" });
+    return;
+  } catch (error: any) {
+    context.res.status(403).json(JSON.parse(error.message));
+    return;
+  }
+};

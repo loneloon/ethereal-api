@@ -60,7 +60,8 @@ export abstract class PrismaBasedPersistenceService<
 
   protected async getUniqueEntity(
     primaryKeyFieldName: string,
-    primaryKeyValue: string | { [key: string]: any }
+    primaryKeyValue: string | { [key: string]: any },
+    include?: string[]
   ): Promise<EntityDto | null> {
     if (this.isPrimaryKeyComposite && typeof primaryKeyValue === "string") {
       console.warn(
@@ -77,11 +78,30 @@ export abstract class PrismaBasedPersistenceService<
     let entityDto: EntityDto | null = null;
 
     try {
-      entityDto = await this.modelAccessor.findUnique({
-        where: {
-          [primaryKeyFieldName]: primaryKeyValue,
-        },
-      });
+      entityDto = await this.modelAccessor.findUnique(
+        include
+          ? {
+              where: {
+                [primaryKeyFieldName]: primaryKeyValue,
+              },
+              include: {
+                ...include?.reduce(
+                  (acc: { [key: string]: boolean }, current: string) => {
+                    return {
+                      ...acc,
+                      [current]: true,
+                    };
+                  },
+                  {}
+                ),
+              },
+            }
+          : {
+              where: {
+                [primaryKeyFieldName]: primaryKeyValue,
+              },
+            }
+      );
     } catch (error) {
       console.warn(
         JSON.stringify({

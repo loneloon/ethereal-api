@@ -32,7 +32,6 @@ model Secret {
 model Device {
     id                String            @id @default(uuid())
     session           Session?          
-    sessionId         String?
     userAgent         String            
     ip                String
 
