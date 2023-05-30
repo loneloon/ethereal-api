@@ -66,7 +66,7 @@ export function validateFirstOrLastNameString(name: string): void {
 
 export function validatePasswordString(password: string): void {
   const minLength = 8;
-  const maxLength = 16;
+  const maxLength = 32;
 
   if (password.length < minLength) {
     throw new Error(

@@ -54,6 +54,21 @@ export class UserManagementController {
     return newSecret;
   }
 
+  private async checkEmailAvailability(email: string): Promise<boolean> {
+    const user: User | null = await this.userPersistenceService.getUserByEmail(
+      email
+    );
+
+    if (user && user.isActive) {
+      return false;
+    } else if (user && !user.isActive) {
+      // TODO: There is a complicated edge-case where we need to account for
+      // returning users that previously "deleted" their accounts, but in our logic we deactivate them instead of deleting
+      return false;
+    }
+    return true;
+  }
+
   // PlatformUser (aka User in AUP model) refers to base/root user account
   // that acts as a central node to all application accounts that user may have
   async createPlatformUser(email: string, password: string): Promise<void> {
@@ -61,11 +76,25 @@ export class UserManagementController {
     try {
       validateEmailString(email);
       validatePasswordString(password);
-    } catch (error) {
+    } catch (error: any) {
       throw new Error(
         JSON.stringify({
           message: "Couldn't create platform user!",
-          error,
+          error: JSON.parse(error.message),
+        })
+      );
+    }
+
+    const isEmailAddressAvailable: boolean = await this.checkEmailAvailability(
+      email
+    );
+
+    // TechDebt: Implement custom errors so that they can be properly translated into http response status codes inside api handlers
+    if (!isEmailAddressAvailable) {
+      throw new Error(
+        JSON.stringify({
+          message: "Couldn't create platform user!",
+          error: "Email address is not available!",
         })
       );
     }
@@ -87,7 +116,7 @@ export class UserManagementController {
         newUser.id,
         password
       );
-    } catch (error) {
+    } catch (error: any) {
       // This looks nasty, because of the cascading errors (but we need them all)
       // Refactor if you have a prettier solution
       console.warn("Performing user rollback! Aborting user creation!");
@@ -107,7 +136,7 @@ export class UserManagementController {
       throw new Error(
         JSON.stringify({
           message: "Couldn't create platform user!",
-          error,
+          error: JSON.parse(error.message),
         })
       );
     }
@@ -137,39 +166,21 @@ export class UserManagementController {
     );
   }
 
-  async checkEmailAvailability(email: string): Promise<boolean> {
-    // INPUT VALIDATORS SECTION
-    try {
-      validateEmailString(email);
-    } catch (error) {
-      return false;
-    }
-
-    const user: User | null = await this.userPersistenceService.getUserByEmail(
-      email
-    );
-
-    if (user && user.isActive) {
-      return false;
-    } else if (user && !user.isActive) {
-      // TODO: There is a complicated edge-case where we need to account for
-      // returning users that previously "deleted" their accounts, but in our logic we deactivate them instead of deleting
-      return false;
-    }
-    return true;
-  }
-
   // TODO: Add editPlatformUserPassword method (different flow in comparison to edit user: terminate active user sessions on pass change)
 
+  // TODO: Add editPlatformUserEmail method (before applying update check that email is not occupied by anybody and then change isEmailVerified to false)
+
+  // TechDebt: We need to re-evaluate the purpose of this method. It makes more sense to edit username separately
   async editPlatformUser(
     sessionId: string,
-    updateUserArgsDto: UpdateUserArgsDto
+    // TechDebt: we shouldn't use a subset of persistance-related update interface; create separate custom types for input args exposed to user
+    updateUserArgsDto: Omit<
+      UpdateUserArgsDto,
+      "email" | "emailIsVerified" | "isActive"
+    >
   ): Promise<User> {
+    // TechDebt: We need to verify that provided arguments are different from current user properties
     try {
-      if (updateUserArgsDto.email) {
-        validateEmailString(updateUserArgsDto.email);
-      }
-
       if (updateUserArgsDto.firstName) {
         validateFirstOrLastNameString(updateUserArgsDto.firstName);
       }
@@ -181,11 +192,11 @@ export class UserManagementController {
       if (updateUserArgsDto.username) {
         validateUsernameString(updateUserArgsDto.username);
       }
-    } catch (error) {
+    } catch (error: any) {
       throw new Error(
         JSON.stringify({
           message: "Invalid input! Skipping user update operation!",
-          error,
+          error: JSON.parse(error.message),
         })
       );
     }
@@ -468,8 +479,8 @@ export class UserManagementController {
         // If session exists but is expired it will be wiped and session resolver will throw
         // If session doesn't exist session resolver will throw
         return await this.resolveSessionById(userDevice.sessionId);
-      } catch (error) {
-        console.warn(error);
+      } catch (error: any) {
+        console.warn(error.message);
       }
     }
 

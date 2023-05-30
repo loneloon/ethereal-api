@@ -8,6 +8,7 @@ import { UserManagementController } from "./controllers/user-management-controll
 import clients from "./prisma-clients";
 import express from "express";
 import cors from "cors";
+import { registerUser } from "./handlers";
 
 const DEFAULT_PORT: number = 8000;
 
@@ -57,6 +58,10 @@ async function main(): Promise<void> {
   app.get("/", (req, res) => {
     res.send(`Ethereal API v${process.env.API_VERSION}`);
   });
+
+  app.post("/user/register", (req, res) =>
+    registerUser({ req, res }, userManagementController)
+  );
 
   app.listen(DEFAULT_PORT, () => {
     console.log(
