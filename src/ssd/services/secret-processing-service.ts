@@ -45,9 +45,37 @@ export class SecretProcessingService {
       .join("");
     const fourthBitGroup = DateTime.now().toISODate()!.split("-").join("");
 
-    const sourceKey =
+    const sourceString =
       firstBitGroup + secondBitGroup + thirdBitGroup + fourthBitGroup;
 
-    return await hash(sourceKey, 10);
+    const hashedSource = await hash(sourceString, 10);
+
+    // We cannot use raw bcrypt hashes as session ids, they will be malformed (because they contain url reserved characters)
+    // We are already in sort of a safe place with the hash so we can apply a light translation on top without sabotaging security
+    // It is still going to be unique and random, but longer
+
+    // Spell should be 10 unique characters long
+    const spell = "Palm.tre3S";
+
+    const delimiter = "~";
+
+    // We iterate through characters of a given hash string and replace each one with a translation:
+    // Formula:
+    //    - codepoint of current character is split by digits,
+    //      each digit is replaced with positionally corellating character in the spell
+    //    - translated characters are separated with a chosen delimiter
+    const translatedHash = hashedSource
+      .split("")
+      .map((char) =>
+        char
+          .codePointAt(0)!
+          .toString()
+          .split("")
+          .map((stringifiedDigit) => spell[parseInt(stringifiedDigit)])
+          .join("")
+      )
+      .join(delimiter);
+
+    return translatedHash;
   }
 }
