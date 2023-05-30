@@ -13,6 +13,12 @@ import { Secret } from "../ssd/models/secret";
 import { Session } from "../ssd/models/session";
 import { Device } from "../ssd/models/device";
 import { DateTime } from "luxon";
+import {
+  validateEmailString,
+  validateFirstOrLastNameString,
+  validatePasswordString,
+  validateUsernameString,
+} from "@shared/validators";
 
 export class UserManagementController {
   constructor(
@@ -26,17 +32,29 @@ export class UserManagementController {
 
   // PlatformUser (aka User in AUP model) refers to base/root user account
   // that acts as a central node to all application accounts that user may have
-  async createPlatformUser(email: string, password: string) {
+  async createPlatformUser(email: string, password: string): Promise<void> {
+    // INPUT VALIDATORS SECTION
+    try {
+      validateEmailString(email);
+      validatePasswordString(password);
+    } catch (error) {
+      throw new Error(
+        JSON.stringify({
+          message: "Couldn't create platform user!",
+          error,
+        })
+      );
+    }
+
     const createdUser: User | null =
       await this.userPersistenceService.createUser({ email });
 
     if (!createdUser) {
-      console.warn(
+      throw new Error(
         JSON.stringify({
-          message: "Couldn't create platform user!",
+          message: "Couldn't create platform user record!",
         })
       );
-      return null;
     }
 
     const [passHash, salt] =
@@ -48,11 +66,32 @@ export class UserManagementController {
         salt,
       });
 
-    // TODO: Map to DTO before returning
-    return createdUser;
+    if (!createdSecret) {
+      console.warn(
+        JSON.stringify({
+          message:
+            "Couldn't create a record of platform user's secret! Aborting user creation!",
+        })
+      );
+
+      this.userPersistenceService.deleteUser(createdUser.id);
+
+      throw new Error(
+        JSON.stringify({
+          message: "Couldn't create platform user record!",
+        })
+      );
+    }
   }
 
   async checkEmailAvailability(email: string): Promise<boolean> {
+    // INPUT VALIDATORS SECTION
+    try {
+      validateEmailString(email);
+    } catch (error) {
+      return false;
+    }
+
     const user: User | null = await this.userPersistenceService.getUserByEmail(
       email
     );
@@ -67,33 +106,56 @@ export class UserManagementController {
     return true;
   }
 
+  // TODO: Add editPlatformUserPassword method (different flow in comparison to edit user: terminate active user sessions on pass change)
+
   async editPlatformUser(
     sessionId: string,
     updateUserArgsDto: UpdateUserArgsDto
-  ): Promise<User | null> {
+  ): Promise<User> {
+    try {
+      if (updateUserArgsDto.email) {
+        validateEmailString(updateUserArgsDto.email);
+      }
+
+      if (updateUserArgsDto.firstName) {
+        validateFirstOrLastNameString(updateUserArgsDto.firstName);
+      }
+
+      if (updateUserArgsDto.lastName) {
+        validateFirstOrLastNameString(updateUserArgsDto.lastName);
+      }
+
+      if (updateUserArgsDto.username) {
+        validateUsernameString(updateUserArgsDto.username);
+      }
+    } catch (error) {
+      throw new Error(
+        JSON.stringify({
+          message: "Invalid input! Skipping user update operation!",
+          error,
+        })
+      );
+    }
+
     const targetUser: User | null = await this.resolvePlatformUserBySessionId(
       sessionId
     );
 
     if (!targetUser) {
-      console.warn(
+      throw new Error(
         JSON.stringify({
           message: "Cannot perform user update operation: user doesn't exist!",
         })
       );
-
-      return null;
     }
 
     if (!targetUser.isActive) {
-      console.warn(
+      throw new Error(
         JSON.stringify({
           message:
             "Cannot perform user update operation: target user is deactivated!",
         })
       );
-
-      return null;
     }
 
     const updatedUser: User | null =
@@ -101,33 +163,38 @@ export class UserManagementController {
         targetUser.id,
         updateUserArgsDto
       );
+
+    if (!updatedUser) {
+      throw new Error(
+        JSON.stringify({
+          message: "Couldn't perform user update operation!",
+        })
+      );
+    }
+
     return updatedUser;
   }
 
-  async deactivatePlatformUser(sessionId: string): Promise<User | null> {
+  async deactivatePlatformUser(sessionId: string): Promise<void> {
     const targetUser: User | null = await this.resolvePlatformUserBySessionId(
       sessionId
     );
 
     if (!targetUser) {
-      console.warn(
+      throw new Error(
         JSON.stringify({
           message:
             "Cannot perform user deactivation operation: user doesn't exist!",
         })
       );
-
-      return null;
     }
 
     if (!targetUser.isActive) {
-      console.warn(
+      throw new Error(
         JSON.stringify({
           message: "User is already deactivated! Skipping operation!",
         })
       );
-
-      return targetUser;
     }
 
     const allUserSessions: Session[] =
@@ -164,39 +231,42 @@ export class UserManagementController {
       })
     );
 
-    return await this.userPersistenceService.updateUser(targetUser.id, {
-      isActive: false,
-    });
+    const deactivatedUser = await this.userPersistenceService.updateUser(
+      targetUser.id,
+      {
+        isActive: false,
+      }
+    );
+
+    if (!deactivatedUser) {
+      throw new Error(
+        JSON.stringify({
+          message: "Couldn't deactivate user!",
+        })
+      );
+    }
   }
 
-  private async resolveSessionById(sessionId: string): Promise<Session | null> {
+  private async resolveSessionById(sessionId: string): Promise<Session> {
     // Verifying if session is actually expired (this is technically redundant)
     const session: Session | null =
       await this.sessionPersistenceService.getSessionById(sessionId);
 
     if (!session) {
-      console.warn(
+      throw new Error(
         JSON.stringify({
           message: "User session doesn't exist!",
           sessionId,
         })
       );
-      return null;
     }
 
     if (session && session.isExpired) {
-      console.warn(
-        JSON.stringify({
-          message: "User session has expired! Wiping session record!",
-          sessionId,
-        })
-      );
-
       const deletedSession: Session | null =
         await this.sessionPersistenceService.deleteSession(sessionId);
 
       if (!deletedSession) {
-        console.warn(
+        throw new Error(
           JSON.stringify({
             message:
               "Couldn't delete expired session! Please remove the session manually!",
@@ -205,7 +275,11 @@ export class UserManagementController {
         );
       }
 
-      return null;
+      throw new Error(
+        JSON.stringify({
+          message: "User session has expired!",
+        })
+      );
     }
 
     return session;
@@ -213,18 +287,8 @@ export class UserManagementController {
 
   private async resolvePlatformUserBySessionId(
     sessionId: string
-  ): Promise<User | null> {
-    const session: Session | null = await this.resolveSessionById(sessionId);
-
-    if (!session) {
-      console.warn(
-        JSON.stringify({
-          message: "Cannot resolve platform user, session doesn't exist!",
-          sessionId,
-        })
-      );
-      return null;
-    }
+  ): Promise<User> {
+    const session: Session = await this.resolveSessionById(sessionId);
 
     const user: User | null = await this.userPersistenceService.getUserById(
       session.userId
@@ -232,7 +296,7 @@ export class UserManagementController {
 
     if (!user) {
       // This can happen if a user record was hard deleted but related sessions were not terminated/deleted before/after that
-      console.warn(
+      throw new Error(
         JSON.stringify({
           message:
             "Warning! There is an active session record that is linked to a user that doesn't exist anymore. Cannot resolve platform user!",
@@ -240,7 +304,6 @@ export class UserManagementController {
           userId: session.userId,
         })
       );
-      return null;
     }
 
     return user;
@@ -251,29 +314,26 @@ export class UserManagementController {
     password: string,
     userAgent: string,
     ip: string
-  ): Promise<Session | null> {
+  ): Promise<Session> {
     const targetUser: User | null =
       await this.userPersistenceService.getUserByEmail(email);
 
     if (!targetUser) {
-      console.warn(
+      throw new Error(
         JSON.stringify({
           message:
             "Cannot perform user sign-in operation: user with this email doesn't exist!",
         })
       );
-      return null;
     }
 
     if (!targetUser.isActive) {
-      console.warn(
+      throw new Error(
         JSON.stringify({
           message:
             "Cannot perform user sign-in operation: target user is deactivated!",
         })
       );
-
-      return null;
     }
 
     let userDevice: Device | null =
@@ -287,7 +347,7 @@ export class UserManagementController {
       // Checking if user is already signed in on this device
       if (userDevice.sessionId) {
         try {
-          // If session is expired it will wipe itself and resolve to null
+          // If session is expired it will wipe itself
           session = await this.resolveSessionById(userDevice.sessionId);
         } catch (error) {
           console.warn(error);
@@ -314,14 +374,12 @@ export class UserManagementController {
       });
 
       if (!newUserDevice) {
-        console.warn(
+        throw new Error(
           JSON.stringify({
             message:
               "Couldn't create user device record. Aborting user sign-in operation!",
           })
         );
-
-        return null;
       }
 
       userDevice = newUserDevice;
@@ -331,15 +389,13 @@ export class UserManagementController {
       await this.secretPersistenceService.getSecretByUserId(targetUser.id);
 
     if (!secret) {
-      console.warn(
+      throw new Error(
         JSON.stringify({
           message:
             "Warning! Registered user doesn't have a password associated with the account! This should never happen, please investigate current sign-up flow ASAP!",
           userId: targetUser.id,
         })
       );
-
-      return null;
     }
 
     const isValidPassword: boolean =
@@ -350,13 +406,11 @@ export class UserManagementController {
       );
 
     if (!isValidPassword) {
-      console.warn(
+      throw new Error(
         JSON.stringify({
           message: "Incorrect credentials provided! Cannot sign-in!",
         })
       );
-
-      return null;
     }
 
     // TechDebt: The default value for this should be defined by platform config
@@ -370,30 +424,19 @@ export class UserManagementController {
     });
 
     if (!session) {
-      console.warn(
+      throw new Error(
         JSON.stringify({
           message:
             "Couldn't create new user session record! Aborting sign-in operation!",
         })
       );
-
-      return null;
     }
 
     return session;
   }
 
   async terminatePlatformUserSession(sessionId: string): Promise<void> {
-    const session: Session | null = await this.resolveSessionById(sessionId);
-
-    if (!session) {
-      console.warn(
-        JSON.stringify({
-          message: "Cannot terminate user session: session doesn't exist!",
-        })
-      );
-      return;
-    }
+    const session: Session = await this.resolveSessionById(sessionId);
 
     const deletedSession = await this.sessionPersistenceService.deleteSession(
       session.id
@@ -401,7 +444,7 @@ export class UserManagementController {
 
     // If session persistence operation is performed successfully (i.e. create, read, update, delete), a session instance will be returned
     if (!deletedSession) {
-      console.warn(
+      throw new Error(
         JSON.stringify({
           message:
             "Couldn't terminate user session! Please remove the session record manually!",
