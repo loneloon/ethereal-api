@@ -54,6 +54,21 @@ export class SecretProcessingService {
     // We are already in sort of a safe place with the hash so we can apply a light translation on top without sabotaging security
     // It is still going to be unique and random, but longer
 
+    // If deployment theme changes in server downtime, sessions will be lost
+    try {
+      const [spell, delimiter] = this.getSpellAndDelimiter();
+
+      return this.enchantString(hashedSource, spell, delimiter);
+    } catch (error) {
+      throw new Error(
+        JSON.stringify({
+          message: "Couldn't verify integrity of session ID!",
+        })
+      );
+    }
+  }
+
+  private static getSpellAndDelimiter(): [spell: string, delimiter: string] {
     const deploymentTheme = new Set(process.env.DEPLOYMENT_THEME);
 
     if (deploymentTheme.size !== 11) {
@@ -69,12 +84,20 @@ export class SecretProcessingService {
     // Last character of the spell will be used as a delimiter
     const delimiter = spell[spell.length - 1];
 
+    return [spell, delimiter];
+  }
+
+  private static enchantString(
+    sourceString: string,
+    spell: string,
+    delimiter: string
+  ): string {
     // We iterate through characters of a given hash string and replace each one with a translation:
     // Formula:
     //    - codepoint of current character is split by digits,
     //      each digit is replaced with positionally corellating character in the spell
     //    - translated characters are separated with a chosen delimiter
-    const translatedHash = hashedSource
+    const enchantedString = sourceString
       .split("")
       .map((char) =>
         char
@@ -86,6 +109,50 @@ export class SecretProcessingService {
       )
       .join(delimiter);
 
-    return translatedHash;
+    if (
+      !this.isValidEnchantment(sourceString, enchantedString, spell, delimiter)
+    ) {
+      throw new Error(
+        JSON.stringify({
+          message: "Couldn't verify enchantment integrity!",
+        })
+      );
+    }
+
+    return enchantedString;
+  }
+
+  private static revealSourceString(
+    enchantedString: string,
+    spell: string,
+    delimiter: string
+  ): string {
+    const sourceString = enchantedString
+      .split(delimiter)
+      .map((enchantedCodepoint) =>
+        String.fromCodePoint(
+          parseInt(
+            enchantedCodepoint
+              .split("")
+              .map((char) => spell.indexOf(char).toString())
+              .join("")
+          )
+        )
+      )
+      .join("");
+
+    return sourceString;
+  }
+
+  private static isValidEnchantment(
+    sourceString: string,
+    enchantedString: string,
+    spell: string,
+    delimiter: string
+  ): boolean {
+    return (
+      sourceString ===
+      this.revealSourceString(enchantedString, spell, delimiter)
+    );
   }
 }
