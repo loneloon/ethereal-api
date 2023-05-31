@@ -1,4 +1,5 @@
 import { AppPersistenceService } from "../aup/services/app-persistence-service";
+import { User as UserDto } from "@prisma-dual-cli/generated/aup-client";
 import {
   UpdateUserArgsDto,
   UserPersistenceService,
@@ -19,6 +20,7 @@ import {
   validatePasswordString,
   validateUsernameString,
 } from "@shared/validators";
+import { mapUserDomainToDto } from "../aup/mappers/domain-to-dto";
 
 export class UserManagementController {
   constructor(
@@ -201,26 +203,9 @@ export class UserManagementController {
       );
     }
 
-    const targetUser: User | null = await this.resolvePlatformUserBySessionId(
+    const targetUser: User = await this.resolvePlatformUserBySessionId(
       sessionId
     );
-
-    if (!targetUser) {
-      throw new Error(
-        JSON.stringify({
-          message: "Cannot perform user update operation: user doesn't exist!",
-        })
-      );
-    }
-
-    if (!targetUser.isActive) {
-      throw new Error(
-        JSON.stringify({
-          message:
-            "Cannot perform user update operation: target user is deactivated!",
-        })
-      );
-    }
 
     const updatedUser: User | null =
       await this.userPersistenceService.updateUser(
@@ -240,26 +225,9 @@ export class UserManagementController {
   }
 
   async deactivatePlatformUser(sessionId: string): Promise<void> {
-    const targetUser: User | null = await this.resolvePlatformUserBySessionId(
+    const targetUser: User = await this.resolvePlatformUserBySessionId(
       sessionId
     );
-
-    if (!targetUser) {
-      throw new Error(
-        JSON.stringify({
-          message:
-            "Cannot perform user deactivation operation: user doesn't exist!",
-        })
-      );
-    }
-
-    if (!targetUser.isActive) {
-      throw new Error(
-        JSON.stringify({
-          message: "User is already deactivated! Skipping operation!",
-        })
-      );
-    }
 
     const allUserSessions: Session[] =
       await this.sessionPersistenceService.getSessionsByUserId(targetUser.id);
@@ -367,7 +335,19 @@ export class UserManagementController {
       throw new Error(
         JSON.stringify({
           message:
-            "Warning! There is an active session record that is linked to a user that doesn't exist anymore. Cannot resolve platform user!",
+            "Warning! Zombie session detected! There is an active session record that is linked to a user that doesn't exist anymore. Cannot resolve platform user!",
+          sessionId: session.id,
+          userId: session.userId,
+        })
+      );
+    }
+
+    if (!user.isActive) {
+      // This can happen if a user record was deactivated but related sessions were not terminated/deleted before/after that
+      throw new Error(
+        JSON.stringify({
+          message:
+            "Warning! Zombie session detected! There is an active session record that is linked to a deactivated user. Cannot resolve platform user!",
           sessionId: session.id,
           userId: session.userId,
         })
@@ -415,6 +395,16 @@ export class UserManagementController {
     }
 
     return userDevice;
+  }
+
+  async getPlatformUser(
+    sessionId: string
+  ): Promise<Omit<UserDto, "id" | "isActive">> {
+    const currentUser: User = await this.resolvePlatformUserBySessionId(
+      sessionId
+    );
+
+    return mapUserDomainToDto(currentUser);
   }
 
   private async createPlatformUserSession(

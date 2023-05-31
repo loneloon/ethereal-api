@@ -58,6 +58,7 @@ export const signOutUser = async (
   const rawCookie = context.req.headers.cookie;
 
   if (!rawCookie) {
+    // Bold assumption... Bad message!
     context.res.status(403).json({
       message: "User is not signed in!",
     });
@@ -86,4 +87,39 @@ export const signOutUser = async (
     message: "Session terminated successfully!",
   });
   return;
+};
+
+export const getUser = async (
+  context: { req: Request; res: Response },
+  userManagementController: UserManagementController
+): Promise<void> => {
+  const rawCookie = context.req.headers.cookie;
+
+  if (!rawCookie) {
+    // Bold assumption... Bad message!
+    context.res.status(403).json({
+      message: "User is not signed in!",
+    });
+    return;
+  }
+
+  const parsedCookie = rawCookie.split("=");
+
+  if (parsedCookie.length > 2) {
+    context.res.status(400).json({
+      message: "Bad headers! Received malformed cookie!",
+    });
+    return;
+  }
+
+  const sessionId = parsedCookie[1];
+
+  try {
+    const userDto = await userManagementController.getPlatformUser(sessionId);
+    context.res.status(200).json(userDto);
+    return;
+  } catch (error: any) {
+    context.res.status(400).json(JSON.parse(error.message));
+    return;
+  }
 };

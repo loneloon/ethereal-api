@@ -8,7 +8,7 @@ import { UserManagementController } from "./controllers/user-management-controll
 import clients from "./prisma-clients";
 import express from "express";
 import cors from "cors";
-import { registerUser, signInUser, signOutUser } from "./handlers";
+import { getUser, registerUser, signInUser, signOutUser } from "./handlers";
 
 const DEFAULT_PORT: number = 8000;
 
@@ -69,6 +69,10 @@ async function main(): Promise<void> {
 
   app.post("/user/sign-out", (req, res) =>
     signOutUser({ req, res }, userManagementController)
+  );
+
+  app.get("/user/account", (req, res) =>
+    getUser({ req, res }, userManagementController)
   );
 
   app.listen(DEFAULT_PORT, () => {
