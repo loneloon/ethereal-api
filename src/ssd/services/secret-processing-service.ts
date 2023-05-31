@@ -54,10 +54,20 @@ export class SecretProcessingService {
     // We are already in sort of a safe place with the hash so we can apply a light translation on top without sabotaging security
     // It is still going to be unique and random, but longer
 
-    // Spell should be 10 unique characters long
-    const spell = "Palm.tre3S";
+    const deploymentTheme = new Set(process.env.DEPLOYMENT_THEME);
 
-    const delimiter = "~";
+    if (deploymentTheme.size !== 11) {
+      throw new Error(
+        JSON.stringify({
+          message: "Incorrect API config! Invalid deployment theme!",
+        })
+      );
+    }
+    // Spell should be 11 unique characters long A-Za-z0-9_.~-
+    const spell = [...deploymentTheme].join("");
+
+    // Last character of the spell will be used as a delimiter
+    const delimiter = spell[spell.length - 1];
 
     // We iterate through characters of a given hash string and replace each one with a translation:
     // Formula:
