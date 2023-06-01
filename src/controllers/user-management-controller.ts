@@ -29,7 +29,8 @@ export class UserManagementController {
     readonly appPersistenceService: AppPersistenceService,
     readonly sessionPersistenceService: SessionPersistenceService,
     readonly secretPersistenceService: SecretPersistenceService,
-    readonly devicePersistenceService: DevicePersistenceService
+    readonly devicePersistenceService: DevicePersistenceService,
+    readonly secretProcessingService: SecretProcessingService
   ) {}
 
   private async createPlatformUserSecret(
@@ -37,7 +38,7 @@ export class UserManagementController {
     password: string
   ): Promise<Secret> {
     const [passHash, salt] =
-      await SecretProcessingService.generatePasswordHashAndSalt(password);
+      await this.secretProcessingService.generatePasswordHashAndSalt(password);
     const newSecret: Secret | null =
       await this.secretPersistenceService.createSecret({
         userId,
@@ -161,7 +162,7 @@ export class UserManagementController {
       );
     }
 
-    return await SecretProcessingService.checkPasswordAgainstHash(
+    return await this.secretProcessingService.checkPasswordAgainstHash(
       password,
       secret.passHash,
       secret.salt
@@ -415,7 +416,7 @@ export class UserManagementController {
     const sessionExpiryDate: DateTime = DateTime.now().plus({ hours: 24 });
 
     const newSession = await this.sessionPersistenceService.createSession({
-      id: await SecretProcessingService.generateUniqueHashString(),
+      id: await this.secretProcessingService.generateUniqueHashString(),
       deviceId,
       userId,
       expiresAt: sessionExpiryDate.toJSDate(),

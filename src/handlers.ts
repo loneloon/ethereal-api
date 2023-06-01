@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { UserManagementController } from "./controllers/user-management-controller";
-import { SecretProcessingService } from "./ssd/services/secret-processing-service";
 
 export const registerUser = async (
   context: { req: Request; res: Response },
@@ -40,17 +39,17 @@ export const signInUser = async (
       ip
     );
 
-    // TechDebt: This is fine for now, but secret processing service is becoming
-    // coupled with the rest of the platform in a weird way...
-    const sessionCookie = SecretProcessingService.generateSessionCookie(
-      userSession.id,
-      userSession.expiresAt
-    );
+    const sessionCookie =
+      userManagementController.secretProcessingService.generateSessionCookie(
+        userSession.id,
+        userSession.expiresAt
+      );
 
     context.res
-      .cookie("SESS_ID", sessionCookie.data, {
+      .cookie(sessionCookie.name, sessionCookie.data, {
         expires: sessionCookie.expiresAt,
         httpOnly: true,
+        domain: sessionCookie.domain,
       })
       .status(200)
       .json({ message: "Authentication successful!" });
@@ -75,17 +74,11 @@ export const signOutUser = async (
     return;
   }
 
-  const parsedCookie = rawCookie.split("=");
-
-  if (parsedCookie.length > 2) {
-    context.res.status(400).json({
-      message: "Bad headers! Received malformed cookie!",
-    });
-    return;
-  }
-
   try {
-    const sessionId = SecretProcessingService.parseSessionId(parsedCookie[1]);
+    const sessionId =
+      userManagementController.secretProcessingService.parseSessionCookie(
+        rawCookie
+      );
 
     await userManagementController.terminatePlatformUserSession(sessionId);
   } catch (error: any) {

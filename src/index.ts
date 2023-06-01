@@ -9,6 +9,7 @@ import clients from "./prisma-clients";
 import express from "express";
 import cors from "cors";
 import { getUser, registerUser, signInUser, signOutUser } from "./handlers";
+import { SecretProcessingService } from "./ssd/services/secret-processing-service";
 
 const DEFAULT_PORT: number = 8000;
 
@@ -22,6 +23,22 @@ async function main(): Promise<void> {
   //    - APP MANAGEMENT CONTROLLER
   //    - ROLES AND PERMISSIONS
   //    - CONSIDER USING DECORATORS TO RESOLVE SESSION AND USER STATE ON OPERATION BASIS (ALSO APPLICABLE FOR PERMISSION CHECKS)
+  const config = () => {
+    const deploymentTheme = process.env.DEPLOYMENT_THEME;
+
+    if (!deploymentTheme) {
+      throw new Error(
+        JSON.stringify({
+          message: "Incorrect API config! Missing deployment theme!",
+        })
+      );
+    }
+
+    return {
+      deploymentTheme,
+    };
+  };
+
   const applicationPersistenceService = new AppPersistenceService(
     clients.aupClient
   );
@@ -40,13 +57,27 @@ async function main(): Promise<void> {
     clients.ssdClient
   );
 
+  const encryptionService = {
+    encrypt(input: string) {
+      return input;
+    },
+    decrypt(input: string) {
+      return input;
+    },
+  };
+
+  const secretProcessingService = new SecretProcessingService(
+    encryptionService
+  );
+
   const userManagementController = new UserManagementController(
     userPersistenceService,
     userProjectionPersistenceService,
     applicationPersistenceService,
     sessionPersistenceService,
     secretPersistenceService,
-    devicePersistenceService
+    devicePersistenceService,
+    secretProcessingService
   );
 
   const app: express.Application = express();
