@@ -11,8 +11,6 @@ import cors from "cors";
 import { getUser, registerUser, signInUser, signOutUser } from "./handlers";
 import { SecretProcessingService } from "./ssd/services/secret-processing-service";
 
-const DEFAULT_PORT: number = 8000;
-
 async function main(): Promise<void> {
   // THIS IS A TEMPORARY SETUP FOR TESTING CONTROLLERS ON THE FLY
   //
@@ -23,7 +21,7 @@ async function main(): Promise<void> {
   //    - APP MANAGEMENT CONTROLLER
   //    - ROLES AND PERMISSIONS
   //    - CONSIDER USING DECORATORS TO RESOLVE SESSION AND USER STATE ON OPERATION BASIS (ALSO APPLICABLE FOR PERMISSION CHECKS)
-  const config = () => {
+  const config = (() => {
     const deploymentTheme = process.env.DEPLOYMENT_THEME;
 
     if (!deploymentTheme) {
@@ -34,10 +32,17 @@ async function main(): Promise<void> {
       );
     }
 
+    const port: number = process.env.PORT ? parseInt(process.env.PORT) : 8000;
+    const apiVersion: string = process.env.API_VERSION ?? "X.X.X";
+    const systemId: string = process.env.SYSTEM_ID ?? "Rogue";
+
     return {
       deploymentTheme,
+      port,
+      apiVersion,
+      systemId,
     };
-  };
+  })();
 
   const applicationPersistenceService = new AppPersistenceService(
     clients.aupClient
@@ -105,9 +110,9 @@ async function main(): Promise<void> {
     getUser({ req, res }, userManagementController)
   );
 
-  app.listen(DEFAULT_PORT, () => {
+  app.listen(config.port, () => {
     console.log(
-      `[${process.env.SYSTEM_ID}:v${process.env.API_VERSION}]: Listening to requests on port ${DEFAULT_PORT}...`
+      `[EtherealAPI:${config.systemId}:v${config.apiVersion}]: Listening to requests on port ${config.port}...`
     );
   });
 }
