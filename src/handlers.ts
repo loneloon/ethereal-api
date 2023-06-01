@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { UserManagementController } from "./controllers/user-management-controller";
+import { SecretProcessingService } from "./ssd/services/secret-processing-service";
 
 export const registerUser = async (
   context: { req: Request; res: Response },
@@ -38,9 +39,18 @@ export const signInUser = async (
       userAgent,
       ip
     );
+
+    // TechDebt: This is fine for now, but secret processing service is becoming
+    // coupled with the rest of the platform in a weird way...
+    const sessionCookie = SecretProcessingService.generateSessionCookie(
+      userSession.id,
+      userSession.expiresAt
+    );
+
     context.res
-      .cookie("SESS_ID", userSession.id, {
-        expires: userSession.expiresAt.toJSDate(),
+      .cookie("SESS_ID", sessionCookie.data, {
+        expires: sessionCookie.expiresAt,
+        httpOnly: true,
       })
       .status(200)
       .json({ message: "Authentication successful!" });
@@ -74,9 +84,9 @@ export const signOutUser = async (
     return;
   }
 
-  const sessionId = parsedCookie[1];
-
   try {
+    const sessionId = SecretProcessingService.parseSessionId(parsedCookie[1]);
+
     await userManagementController.terminatePlatformUserSession(sessionId);
   } catch (error: any) {
     context.res.status(400).json(JSON.parse(error.message));
