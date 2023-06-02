@@ -64,21 +64,10 @@ export const signOutUser = async (
   context: { req: Request; res: Response },
   userManagementController: UserManagementController
 ): Promise<void> => {
-  const rawCookie = context.req.headers.cookie;
-
-  if (!rawCookie) {
-    // Bold assumption... Bad message!
-    context.res.status(403).json({
-      message: "User is not signed in!",
-    });
-    return;
-  }
-
   try {
-    const sessionId =
-      userManagementController.secretProcessingService.parseSessionCookie(
-        rawCookie
-      );
+    const sessionId = (
+      await resolveAuthContext(context, userManagementController)
+    ).sessionId;
 
     await userManagementController.terminatePlatformUserSession(sessionId);
   } catch (error: any) {
@@ -96,28 +85,11 @@ export const getUser = async (
   context: { req: Request; res: Response },
   userManagementController: UserManagementController
 ): Promise<void> => {
-  const rawCookie = context.req.headers.cookie;
-
-  if (!rawCookie) {
-    // Bold assumption... Bad message!
-    context.res.status(403).json({
-      message: "User is not signed in!",
-    });
-    return;
-  }
-
-  const parsedCookie = rawCookie.split("=");
-
-  if (parsedCookie.length > 2) {
-    context.res.status(400).json({
-      message: "Bad headers! Received malformed cookie!",
-    });
-    return;
-  }
-
-  const sessionId = parsedCookie[1];
-
   try {
+    const sessionId = (
+      await resolveAuthContext(context, userManagementController)
+    ).sessionId;
+
     const userDto = await userManagementController.getPlatformUser(sessionId);
     context.res.status(200).json(userDto);
     return;
@@ -126,3 +98,29 @@ export const getUser = async (
     return;
   }
 };
+
+async function resolveAuthContext(
+  context: { req: Request; res: Response },
+  userManagementController: UserManagementController
+): Promise<{ sessionId: string }> {
+  const rawCookie = context.req.headers.cookie;
+
+  if (!rawCookie) {
+    throw new Error(
+      JSON.stringify({
+        message: "User is not signed in!",
+      })
+    );
+  }
+
+  try {
+    return {
+      sessionId:
+        userManagementController.secretProcessingService.parseSessionCookie(
+          rawCookie
+        ),
+    };
+  } catch (error: any) {
+    throw new Error(JSON.parse(error.message));
+  }
+}

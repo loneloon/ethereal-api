@@ -10,6 +10,7 @@ import express from "express";
 import cors from "cors";
 import { getUser, registerUser, signInUser, signOutUser } from "./handlers";
 import { SecretProcessingService } from "./ssd/services/secret-processing-service";
+import { Espeon } from "espeon";
 
 async function main(): Promise<void> {
   // THIS IS A TEMPORARY SETUP FOR TESTING CONTROLLERS ON THE FLY
@@ -62,14 +63,7 @@ async function main(): Promise<void> {
     clients.ssdClient
   );
 
-  const encryptionService = {
-    encrypt(input: string) {
-      return input;
-    },
-    decrypt(input: string) {
-      return input;
-    },
-  };
+  const encryptionService = new Espeon(config.deploymentTheme);
 
   const secretProcessingService = new SecretProcessingService(
     encryptionService

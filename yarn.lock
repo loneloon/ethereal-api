@@ -2099,6 +2099,11 @@ escape-string-regexp@^2.0.0:
   resolved "https://registry.yarnpkg.com/escape-string-regexp/-/escape-string-regexp-2.0.0.tgz#a30304e99daa32e23b2fd20f51babd07cffca344"
   integrity sha512-UpzcLCXolUWcNu5HtVMHYdXJjArjsF9C0aNnquZYY4uW/Vu0miy5YoWvbV345HauVvcAUnpRuhMMcqTcGOY2+w==
 
+espeon@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/espeon/-/espeon-0.1.0.tgz#3cf01a343160abed9487fe8992ecbf1888958760"
+  integrity sha512-FMJAioQpHYUhXtyvZcaYLqqw6kRAQkRu7fTcG+uV9FE93oIBbl86T/4OA0TEGbl2to+tRebl15FqUk2KKHKPmw==
+
 esprima@^4.0.0:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/esprima/-/esprima-4.0.1.tgz#13b04cdb3e6c5d19df91ab6987a8695619b0aa71"

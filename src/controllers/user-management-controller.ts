@@ -458,7 +458,7 @@ export class UserManagementController {
       );
     }
 
-    let userDevice: Device = await this.resolvePlatformUserDevice(
+    const userDevice: Device = await this.resolvePlatformUserDevice(
       userAgent,
       ip,
       targetUser.id

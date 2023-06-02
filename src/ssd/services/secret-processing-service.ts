@@ -4,8 +4,13 @@ import { DateTime } from "luxon";
 import * as emoji from "emojilib";
 import { SessionCookieDto } from "../dtos/authentication";
 
+interface EncryptionService {
+  encrypt: any;
+  decrypt: any;
+}
+
 export class SecretProcessingService {
-  constructor(readonly encryptionService: any) {}
+  constructor(readonly encryptionService: EncryptionService) {}
 
   public async generatePasswordHashAndSalt(
     password: string
@@ -60,9 +65,8 @@ export class SecretProcessingService {
   ): SessionCookieDto {
     return {
       name: "SESS_ID",
-      data: this.encryptionService.enchantString(sessionId),
+      data: this.encryptionService.encrypt(sessionId),
       expiresAt: expiresAt.toJSDate(),
-      domain: "/",
     };
   }
 
