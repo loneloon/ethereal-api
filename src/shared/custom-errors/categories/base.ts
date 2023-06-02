@@ -22,7 +22,14 @@ export abstract class CustomError {
   protected abstract internalOnly: boolean;
   protected abstract messageTemplate: string;
 
-  constructor(private readonly params: ErrorMessageParams) {}
+  constructor(
+    private readonly params: ErrorMessageParams,
+    enableLogging: boolean = true
+  ) {
+    if (enableLogging) {
+      this.log();
+    }
+  }
 
   private formatMessage(rawMessage: string): string {
     let formattedMessage = rawMessage;
@@ -44,8 +51,18 @@ export abstract class CustomError {
   get dto(): CustomErrorDto {
     return {
       httpCode: this.httpCode,
-      platformCode: this.platformCode,
-      message: this.message,
+      platformCode: this.internalOnly ? "E0000" : this.platformCode,
+      message: this.internalOnly ? "Internal server error!" : this.message,
     };
+  }
+
+  private log() {
+    // Replace with a proper logger
+    console.warn({
+      message: this.message,
+      code: this.platformCode,
+      data: this.params,
+      timestamp: DateTime.now().toLocaleString(),
+    });
   }
 }

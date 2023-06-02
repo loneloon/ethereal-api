@@ -1,3 +1,5 @@
+import { UserPasswordTooShortError } from "../custom-errors";
+
 export function validateEmailString(email: string): void {
   const emailRegEx =
     /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
@@ -69,11 +71,7 @@ export function validatePasswordString(password: string): void {
   const maxLength = 32;
 
   if (password.length < minLength) {
-    throw new Error(
-      JSON.stringify({
-        message: `Invalid password! Password should be at least ${minLength} characters long!`,
-      })
-    );
+    throw new UserPasswordTooShortError(minLength, password.length);
   }
 
   if (password.length > maxLength) {

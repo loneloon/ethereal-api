@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { UserManagementController } from "./controllers/user-management-controller";
-import { UserIsNotAuthenticatedError } from "./shared/custom-errors/categories/platform-user";
+import { UserIsNotAuthenticatedError } from "./shared/custom-errors/categories/users/authentication";
 
 export const registerUser = async (
   context: { req: Request; res: Response },

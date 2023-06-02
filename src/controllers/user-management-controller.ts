@@ -21,6 +21,7 @@ import {
   validateUsernameString,
 } from "@shared/validators";
 import { mapUserDomainToDto } from "../aup/mappers/domain-to-dto";
+import { UserPasswordHashCannotBeSavedError } from "@shared/custom-errors";
 
 export class UserManagementController {
   constructor(
@@ -47,11 +48,7 @@ export class UserManagementController {
       });
 
     if (!newSecret) {
-      throw new Error(
-        JSON.stringify({
-          message: "Couldn't create platform user's secret record!",
-        })
-      );
+      throw new UserPasswordHashCannotBeSavedError(userId);
     }
 
     return newSecret;
