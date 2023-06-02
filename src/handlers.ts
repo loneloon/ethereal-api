@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { UserManagementController } from "./controllers/user-management-controller";
+import { UserIsNotAuthenticatedError } from "./shared/custom-errors/categories/platform-user";
 
 export const registerUser = async (
   context: { req: Request; res: Response },
@@ -94,7 +95,7 @@ export const getUser = async (
     context.res.status(200).json(userDto);
     return;
   } catch (error: any) {
-    context.res.status(400).json(JSON.parse(error.message));
+    context.res.status(error.httpCode).json(error.dto);
     return;
   }
 };
@@ -106,21 +107,13 @@ async function resolveAuthContext(
   const rawCookie = context.req.headers.cookie;
 
   if (!rawCookie) {
-    throw new Error(
-      JSON.stringify({
-        message: "User is not signed in!",
-      })
-    );
+    throw new UserIsNotAuthenticatedError();
   }
 
-  try {
-    return {
-      sessionId:
-        userManagementController.secretProcessingService.parseSessionCookie(
-          rawCookie
-        ),
-    };
-  } catch (error: any) {
-    throw new Error(JSON.parse(error.message));
-  }
+  return {
+    sessionId:
+      userManagementController.secretProcessingService.parseSessionCookie(
+        rawCookie
+      ),
+  };
 }
