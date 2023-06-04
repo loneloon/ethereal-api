@@ -25,6 +25,7 @@ import {
   ExpiredUserSessionCannotBeDeletedError,
   InvalidUserCredentialsError,
   UserAccountCannotBeCreatedError,
+  UserAccountCannotBeDeactivatedError,
   UserAccountDoesntExistAnymoreError,
   UserAccountDoesntExistAnymoreWithSessionsError,
   UserAccountHasNoAssociatedSecretError,
@@ -34,6 +35,7 @@ import {
   UserIsNotAuthenticatedError,
   UserSecretCannotBeCreatedError,
   UserSessionCannotBeCreatedError,
+  UserSessionCannotBeDeletedError,
   UserSessionHasExpiredError,
 } from "@shared/custom-errors";
 
@@ -252,11 +254,7 @@ export class UserManagementController {
     );
 
     if (!deactivatedUser) {
-      throw new Error(
-        JSON.stringify({
-          message: "Couldn't deactivate user!",
-        })
-      );
+      throw new UserAccountCannotBeDeactivatedError(targetUser.id);
     }
   }
 
@@ -450,12 +448,7 @@ export class UserManagementController {
 
     // If session persistence operation is performed successfully (i.e. create, read, update, delete), a session instance will be returned
     if (!deletedSession) {
-      throw new Error(
-        JSON.stringify({
-          message:
-            "Couldn't terminate user session! Please remove the session record manually!",
-        })
-      );
+      throw new UserSessionCannotBeDeletedError(sessionId);
     }
 
     return;

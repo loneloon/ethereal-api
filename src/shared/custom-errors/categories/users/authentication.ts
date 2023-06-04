@@ -12,9 +12,21 @@ export class UserAccountHasNoAssociatedSecretError extends CustomError {
   }
 }
 
-export class ExpiredUserSessionCannotBeDeletedError extends CustomError {
+export class UserSessionCannotBeDeletedError extends CustomError {
   readonly httpCode: number = 500;
   readonly platformCode: string = "E1000.2";
+  protected readonly internalOnly: boolean = true;
+  protected readonly messageTemplate: string =
+    "Couldn't terminate user session! Please remove the session record manually!";
+
+  constructor(sessionId: string) {
+    super({ sessionId });
+  }
+}
+
+export class ExpiredUserSessionCannotBeDeletedError extends CustomError {
+  readonly httpCode: number = 500;
+  readonly platformCode: string = "E1000.3";
   protected readonly internalOnly: boolean = true;
   protected readonly messageTemplate: string =
     "Couldn't delete expired session! Please remove the session manually!";
@@ -26,7 +38,7 @@ export class ExpiredUserSessionCannotBeDeletedError extends CustomError {
 
 export class UserDeviceCannotBeCreatedError extends CustomError {
   readonly httpCode: number = 500;
-  readonly platformCode: string = "E1000.3";
+  readonly platformCode: string = "E1000.4";
   protected readonly internalOnly: boolean = true;
   protected readonly messageTemplate: string =
     "Couldn't create user device record!";
@@ -38,7 +50,7 @@ export class UserDeviceCannotBeCreatedError extends CustomError {
 
 export class UserSessionCannotBeCreatedError extends CustomError {
   readonly httpCode: number = 500;
-  readonly platformCode: string = "E1000.4";
+  readonly platformCode: string = "E1000.5";
   protected readonly internalOnly: boolean = true;
   protected readonly messageTemplate: string =
     "Couldn't create platform user session!";
