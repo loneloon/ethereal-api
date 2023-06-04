@@ -56,7 +56,7 @@ export const signInUser = async (
       .json({ message: "Authentication successful!" });
     return;
   } catch (error: any) {
-    context.res.status(403).json(JSON.parse(error.message));
+    context.res.status(403).json(error.dto);
     return;
   }
 };
