@@ -72,7 +72,7 @@ export const signOutUser = async (
 
     await userManagementController.terminatePlatformUserSession(sessionId);
   } catch (error: any) {
-    context.res.status(400).json(JSON.parse(error.message));
+    context.res.status(400).json(error.dto);
     return;
   }
 
