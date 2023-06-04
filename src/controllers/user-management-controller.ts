@@ -22,10 +22,19 @@ import {
 } from "@shared/validators";
 import { mapUserDomainToDto } from "../aup/mappers/domain-to-dto";
 import {
-  UserAccountCannotBeSavedError,
+  ExpiredUserSessionCannotBeDeletedError,
+  InvalidUserCredentialsError,
+  UserAccountCannotBeCreatedError,
+  UserAccountDoesntExistAnymoreError,
+  UserAccountDoesntExistAnymoreWithSessionsError,
+  UserAccountHasNoAssociatedSecretError,
   UserAccountRollbackError,
-  UserEmailIsNotAvailable,
-  UserSecretCannotBeSavedError,
+  UserDeviceCannotBeCreatedError,
+  UserEmailIsNotAvailableError,
+  UserIsNotAuthenticatedError,
+  UserSecretCannotBeCreatedError,
+  UserSessionCannotBeCreatedError,
+  UserSessionHasExpiredError,
 } from "@shared/custom-errors";
 
 export class UserManagementController {
@@ -53,7 +62,7 @@ export class UserManagementController {
       });
 
     if (!newSecret) {
-      throw new UserSecretCannotBeSavedError(userId);
+      throw new UserSecretCannotBeCreatedError(userId);
     }
 
     return newSecret;
@@ -88,7 +97,7 @@ export class UserManagementController {
 
     // TechDebt: Implement custom errors so that they can be properly translated into http response status codes inside api handlers
     if (!isEmailAddressAvailable) {
-      throw new UserEmailIsNotAvailable();
+      throw new UserEmailIsNotAvailableError();
     }
 
     const newUser: User | null = await this.userPersistenceService.createUser({
@@ -96,7 +105,7 @@ export class UserManagementController {
     });
 
     if (!newUser) {
-      throw new UserAccountCannotBeSavedError(email);
+      throw new UserAccountCannotBeCreatedError(email);
     }
 
     try {
@@ -116,7 +125,7 @@ export class UserManagementController {
         throw new UserAccountRollbackError(email, newUser.id);
       }
 
-      throw new UserAccountCannotBeSavedError(email);
+      throw new UserAccountCannotBeCreatedError(email);
     }
   }
 
@@ -128,13 +137,7 @@ export class UserManagementController {
       await this.secretPersistenceService.getSecretByUserId(userId);
 
     if (!secret) {
-      throw new Error(
-        JSON.stringify({
-          message:
-            "Warning! Registered user doesn't have a password associated with the account! This should never happen, please investigate current sign-up flow ASAP!",
-          userId,
-        })
-      );
+      throw new UserAccountHasNoAssociatedSecretError(userId);
     }
 
     return await this.secretProcessingService.checkPasswordAgainstHash(
@@ -265,12 +268,7 @@ export class UserManagementController {
       await this.sessionPersistenceService.getSessionById(sessionId);
 
     if (!session) {
-      throw new Error(
-        JSON.stringify({
-          message: "User session doesn't exist!",
-          sessionId,
-        })
-      );
+      throw new UserIsNotAuthenticatedError();
     }
 
     if (session && session.isExpired) {
@@ -278,20 +276,12 @@ export class UserManagementController {
         await this.sessionPersistenceService.deleteSession(sessionId);
 
       if (!deletedSession) {
-        throw new Error(
-          JSON.stringify({
-            message:
-              "Couldn't delete expired session! Please remove the session manually!",
-            sessionId,
-          })
-        );
+        throw new ExpiredUserSessionCannotBeDeletedError(sessionId);
       }
 
-      throw new Error(
-        JSON.stringify({
-          message: "User session has expired!",
-        })
-      );
+      // Should trigger 302 with redirect to signIn page
+      // But this should be delegated to apps, as we are expecting proxy authentication most of the time
+      throw new UserSessionHasExpiredError();
     }
 
     return session;
@@ -308,19 +298,22 @@ export class UserManagementController {
 
     if (!user) {
       // This can happen if a user record was hard deleted but related sessions were not terminated/deleted before/after that
-      throw new Error(
+      // We can communicate that account doesn't exist anymore, but this is considered a critical error and requires manual action
+      console.warn(
         JSON.stringify({
           message:
-            "Warning! Zombie session detected! There is an active session record that is linked to a user that doesn't exist anymore. Cannot resolve platform user!",
+            "[CRITICAL] Zombie session detected! There is an active session record that is linked to a user that doesn't exist anymore. Cannot resolve platform user!",
           sessionId: session.id,
           userId: session.userId,
         })
       );
+      throw new UserAccountDoesntExistAnymoreWithSessionsError();
     }
 
     if (!user.isActive) {
       // This can happen if a user record was deactivated but related sessions were not terminated/deleted before/after that
-      throw new Error(
+      // We can communicate that account doesn't exist anymore, but this is considered a critical error and requires manual action
+      console.warn(
         JSON.stringify({
           message:
             "Warning! Zombie session detected! There is an active session record that is linked to a deactivated user. Cannot resolve platform user!",
@@ -328,6 +321,7 @@ export class UserManagementController {
           userId: session.userId,
         })
       );
+      throw new UserAccountDoesntExistAnymoreWithSessionsError();
     }
 
     return user;
@@ -360,11 +354,7 @@ export class UserManagementController {
       });
 
       if (!newUserDevice) {
-        throw new Error(
-          JSON.stringify({
-            message: "Couldn't create user device record!",
-          })
-        );
+        throw new UserDeviceCannotBeCreatedError(userId, userAgent, ip);
       }
 
       return newUserDevice;
@@ -398,9 +388,7 @@ export class UserManagementController {
     });
 
     if (!newSession) {
-      throw new Error(
-        JSON.stringify({ message: "Couldn't create platform user session!" })
-      );
+      throw new UserSessionCannotBeCreatedError(userId, deviceId);
     }
 
     return newSession;
@@ -416,21 +404,11 @@ export class UserManagementController {
       await this.userPersistenceService.getUserByEmail(email);
 
     if (!targetUser) {
-      throw new Error(
-        JSON.stringify({
-          message:
-            "Cannot perform user sign-in operation: user with this email doesn't exist!",
-        })
-      );
+      throw new InvalidUserCredentialsError();
     }
 
     if (!targetUser.isActive) {
-      throw new Error(
-        JSON.stringify({
-          message:
-            "Cannot perform user sign-in operation: target user is deactivated!",
-        })
-      );
+      throw new UserAccountDoesntExistAnymoreError();
     }
 
     const userDevice: Device = await this.resolvePlatformUserDevice(
@@ -446,7 +424,8 @@ export class UserManagementController {
         // If session doesn't exist session resolver will throw
         return await this.resolveSessionById(userDevice.sessionId);
       } catch (error: any) {
-        console.warn(error.message);
+        // We can just catch the error here without throwing, this behaviour is expected.
+        // If error logging is enabled, errors will be logged anyway.
       }
     }
 
@@ -456,11 +435,7 @@ export class UserManagementController {
     );
 
     if (!isMatchingPassword) {
-      throw new Error(
-        JSON.stringify({
-          message: "Incorrect credentials provided! Cannot sign-in!",
-        })
-      );
+      throw new InvalidUserCredentialsError();
     }
 
     return await this.createPlatformUserSession(userDevice.id, targetUser.id);

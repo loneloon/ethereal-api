@@ -1,6 +1,6 @@
 import { CustomError } from "../base";
 
-export class UserSecretCannotBeSavedError extends CustomError {
+export class UserSecretCannotBeCreatedError extends CustomError {
   readonly httpCode: number = 500;
   readonly platformCode: string = "E1010.1";
   protected readonly internalOnly: boolean = true;
@@ -12,7 +12,7 @@ export class UserSecretCannotBeSavedError extends CustomError {
   }
 }
 
-export class UserAccountCannotBeSavedError extends CustomError {
+export class UserAccountCannotBeCreatedError extends CustomError {
   readonly httpCode: number = 500;
   readonly platformCode: string = "E1010.2";
   protected readonly internalOnly: boolean = true;
@@ -60,7 +60,7 @@ export class UserPasswordTooLongError extends CustomError {
   }
 }
 
-export class UserPasswordInvalidFormat extends CustomError {
+export class UserPasswordInvalidFormatError extends CustomError {
   readonly httpCode: number = 400;
   readonly platformCode: string = "E1013";
   protected readonly internalOnly: boolean = false;
@@ -72,7 +72,7 @@ export class UserPasswordInvalidFormat extends CustomError {
   }
 }
 
-export class UserEmailInvalidFormat extends CustomError {
+export class UserEmailInvalidFormatError extends CustomError {
   readonly httpCode: number = 400;
   readonly platformCode: string = "E1014";
   protected readonly internalOnly: boolean = false;
@@ -83,7 +83,7 @@ export class UserEmailInvalidFormat extends CustomError {
   }
 }
 
-export class UserEmailIsNotAvailable extends CustomError {
+export class UserEmailIsNotAvailableError extends CustomError {
   readonly httpCode: number = 400;
   readonly platformCode: string = "E1015";
   protected readonly internalOnly: boolean = false;
