@@ -21,7 +21,12 @@ import {
   validateUsernameString,
 } from "@shared/validators";
 import { mapUserDomainToDto } from "../aup/mappers/domain-to-dto";
-import { UserPasswordHashCannotBeSavedError } from "@shared/custom-errors";
+import {
+  UserAccountCannotBeSavedError,
+  UserAccountRollbackError,
+  UserEmailIsNotAvailable,
+  UserSecretCannotBeSavedError,
+} from "@shared/custom-errors";
 
 export class UserManagementController {
   constructor(
@@ -48,7 +53,7 @@ export class UserManagementController {
       });
 
     if (!newSecret) {
-      throw new UserPasswordHashCannotBeSavedError(userId);
+      throw new UserSecretCannotBeSavedError(userId);
     }
 
     return newSecret;
@@ -73,17 +78,9 @@ export class UserManagementController {
   // that acts as a central node to all application accounts that user may have
   async createPlatformUser(email: string, password: string): Promise<void> {
     // INPUT VALIDATORS SECTION
-    try {
-      validateEmailString(email);
-      validatePasswordString(password);
-    } catch (error: any) {
-      throw new Error(
-        JSON.stringify({
-          message: "Couldn't create platform user!",
-          error: JSON.parse(error.message),
-        })
-      );
-    }
+
+    validateEmailString(email);
+    validatePasswordString(password);
 
     const isEmailAddressAvailable: boolean = await this.checkEmailAvailability(
       email
@@ -91,12 +88,7 @@ export class UserManagementController {
 
     // TechDebt: Implement custom errors so that they can be properly translated into http response status codes inside api handlers
     if (!isEmailAddressAvailable) {
-      throw new Error(
-        JSON.stringify({
-          message: "Couldn't create platform user!",
-          error: "Email address is not available!",
-        })
-      );
+      throw new UserEmailIsNotAvailable();
     }
 
     const newUser: User | null = await this.userPersistenceService.createUser({
@@ -104,11 +96,7 @@ export class UserManagementController {
     });
 
     if (!newUser) {
-      throw new Error(
-        JSON.stringify({
-          message: "Couldn't create platform user record!",
-        })
-      );
+      throw new UserAccountCannotBeSavedError(email);
     }
 
     try {
@@ -125,20 +113,10 @@ export class UserManagementController {
       );
 
       if (!deletedUser) {
-        throw new Error(
-          JSON.stringify({
-            message:
-              "User rollback operation failed! Investigate persistence service state ASAP!",
-          })
-        );
+        throw new UserAccountRollbackError(email, newUser.id);
       }
 
-      throw new Error(
-        JSON.stringify({
-          message: "Couldn't create platform user!",
-          error: JSON.parse(error.message),
-        })
-      );
+      throw new UserAccountCannotBeSavedError(email);
     }
   }
 

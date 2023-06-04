@@ -1,4 +1,9 @@
-import { UserPasswordTooShortError } from "../custom-errors";
+import {
+  UserEmailInvalidFormat,
+  UserPasswordInvalidFormat,
+  UserPasswordTooLongError,
+  UserPasswordTooShortError,
+} from "../custom-errors";
 
 export function validateEmailString(email: string): void {
   const emailRegEx =
@@ -6,12 +11,7 @@ export function validateEmailString(email: string): void {
   const substringMatch = email.match(emailRegEx);
 
   if (!substringMatch || substringMatch[0] !== email) {
-    throw new Error(
-      JSON.stringify({
-        message: "Invalid email format!",
-        email,
-      })
-    );
+    throw new UserEmailInvalidFormat();
   }
 }
 
@@ -75,11 +75,7 @@ export function validatePasswordString(password: string): void {
   }
 
   if (password.length > maxLength) {
-    throw new Error(
-      JSON.stringify({
-        message: `Invalid password! Password can be ${maxLength} characters long maximum!`,
-      })
-    );
+    throw new UserPasswordTooLongError(maxLength, password.length);
   }
 
   const passwordRegEx =
@@ -87,11 +83,6 @@ export function validatePasswordString(password: string): void {
   const substringMatch = password.match(passwordRegEx);
 
   if (!substringMatch || substringMatch[0] !== password) {
-    throw new Error(
-      JSON.stringify({
-        message:
-          "Invalid password format! Password should contain at least one uppercase letter, one lowercase letter, one number and one special character",
-      })
-    );
+    throw new UserPasswordInvalidFormat();
   }
 }

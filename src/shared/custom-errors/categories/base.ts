@@ -24,12 +24,8 @@ export abstract class CustomError {
 
   constructor(
     private readonly params: ErrorMessageParams,
-    enableLogging: boolean = true
-  ) {
-    if (enableLogging) {
-      this.log();
-    }
-  }
+    private readonly enableLogging: boolean = true
+  ) {}
 
   private formatMessage(rawMessage: string): string {
     let formattedMessage = rawMessage;
@@ -49,6 +45,11 @@ export abstract class CustomError {
   }
 
   get dto(): CustomErrorDto {
+    // Find a better place to trigger logging
+    if (this.enableLogging) {
+      this.log();
+    }
+
     return {
       httpCode: this.httpCode,
       platformCode: this.internalOnly ? "E0000" : this.platformCode,
@@ -62,7 +63,7 @@ export abstract class CustomError {
       message: this.message,
       code: this.platformCode,
       data: this.params,
-      timestamp: DateTime.now().toLocaleString(),
+      timestamp: DateTime.now().toISO(),
     });
   }
 }

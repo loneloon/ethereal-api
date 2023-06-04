@@ -14,7 +14,7 @@ export const registerUser = async (
       body.password
     );
   } catch (error: any) {
-    context.res.status(400).json(JSON.parse(error.message));
+    context.res.status(400).json(error.dto);
     return;
   }
 
