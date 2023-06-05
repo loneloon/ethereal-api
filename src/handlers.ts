@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { UserManagementController } from "./controllers/user-management-controller";
 import { UserIsNotAuthenticatedError } from "./shared/custom-errors/categories/users/authentication";
 
-export const registerUser = async (
+export const signUpUser = async (
   context: { req: Request; res: Response },
   userManagementController: UserManagementController
 ): Promise<void> => {
@@ -53,7 +53,7 @@ export const signInUser = async (
         domain: sessionCookie.domain,
       })
       .status(200)
-      .json({ message: "Authentication successful!" });
+      .json({ message: "User authentication successful!" });
     return;
   } catch (error: any) {
     context.res.status(403).json(error.dto);

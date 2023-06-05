@@ -8,7 +8,7 @@ import { UserManagementController } from "./controllers/user-management-controll
 import clients from "./prisma-clients";
 import express from "express";
 import cors from "cors";
-import { getUser, registerUser, signInUser, signOutUser } from "./handlers";
+import { getUser, signUpUser, signInUser, signOutUser } from "./handlers";
 import { SecretProcessingService } from "./ssd/services/secret-processing-service";
 import { Espeon } from "espeon";
 
@@ -88,8 +88,8 @@ async function main(): Promise<void> {
     res.send(`Ethereal API v${process.env.API_VERSION}`);
   });
 
-  app.post("/user/register", (req, res) =>
-    registerUser({ req, res }, userManagementController)
+  app.post("/user/sign-up", (req, res) =>
+    signUpUser({ req, res }, userManagementController)
   );
 
   app.post("/user/sign-in", (req, res) =>
