@@ -149,50 +149,117 @@ export class UserManagementController {
     );
   }
 
-  // TODO: Add editPlatformUserPassword method (different flow in comparison to edit user: terminate active user sessions on pass change)
-
-  // TODO: Add editPlatformUserEmail method (before applying update check that email is not occupied by anybody and then change isEmailVerified to false)
-
-  // TechDebt: We need to re-evaluate the purpose of this method. It makes more sense to edit username separately
-  async editPlatformUser(
+  async changePlatformUserEmail(
     sessionId: string,
-    // TechDebt: we shouldn't use a subset of persistance-related update interface; create separate custom types for input args exposed to user
-    updateUserArgsDto: Omit<
-      UpdateUserArgsDto,
-      "email" | "emailIsVerified" | "isActive"
-    >
-  ): Promise<User> {
-    // TechDebt: We need to verify that provided arguments are different from current user properties
-    try {
-      if (updateUserArgsDto.firstName) {
-        validateFirstOrLastNameString(updateUserArgsDto.firstName);
-      }
+    email: string
+  ): Promise<void> {
+    const targetUser: User = await this.resolvePlatformUserBySessionId(
+      sessionId
+    );
 
-      if (updateUserArgsDto.lastName) {
-        validateFirstOrLastNameString(updateUserArgsDto.lastName);
-      }
+    validateEmailString(email);
 
-      if (updateUserArgsDto.username) {
-        validateUsernameString(updateUserArgsDto.username);
-      }
-    } catch (error: any) {
+    const isEmailAddressAvailable: boolean = await this.checkEmailAvailability(
+      email
+    );
+
+    // TechDebt: Implement custom errors so that they can be properly translated into http response status codes inside api handlers
+    if (!isEmailAddressAvailable) {
+      throw new UserEmailIsNotAvailableError();
+    }
+
+    const updatedUser: User | null =
+      await this.userPersistenceService.updateUser(targetUser.id, { email });
+
+    if (!updatedUser) {
       throw new Error(
         JSON.stringify({
-          message: "Invalid input! Skipping user update operation!",
-          error: JSON.parse(error.message),
+          message: "Couldn't update user email!",
         })
       );
     }
+  }
+
+  async changePlatformUserPassword(
+    sessionId: string,
+    oldPassword: string,
+    newPassword: string
+  ): Promise<void> {
+    const targetUser: User = await this.resolvePlatformUserBySessionId(
+      sessionId
+    );
+
+    const isMatchingPassword = await this.verifyPlatformUserPassword(
+      targetUser.id,
+      oldPassword
+    );
+
+    if (!isMatchingPassword) {
+      throw new Error("Old password is invalid!");
+    }
+
+    validatePasswordString(newPassword);
+
+    const [passHash, salt] =
+      await this.secretProcessingService.generatePasswordHashAndSalt(
+        newPassword
+      );
+
+    const updatedUserSecret: Secret | null =
+      await this.secretPersistenceService.updateSecret(targetUser.id, {
+        passHash,
+        salt,
+      });
+
+    if (!updatedUserSecret) {
+      throw new Error(
+        JSON.stringify({
+          message: "Couldn't update user secret!",
+        })
+      );
+    }
+  }
+
+  async changePlatformUserUsername(
+    sessionId: string,
+    username: string
+  ): Promise<void> {
+    const targetUser: User = await this.resolvePlatformUserBySessionId(
+      sessionId
+    );
+
+    validateUsernameString(username);
+
+    const updatedUser: User | null =
+      await this.userPersistenceService.updateUser(targetUser.id, { username });
+
+    if (!updatedUser) {
+      throw new Error(
+        JSON.stringify({
+          message: "Couldn't update user username!",
+        })
+      );
+    }
+  }
+
+  async changePlatformUserName(
+    sessionId: string,
+    firstName: string,
+    lastName: string
+  ): Promise<User> {
+    validateFirstOrLastNameString(firstName);
+
+    validateFirstOrLastNameString(lastName);
 
     const targetUser: User = await this.resolvePlatformUserBySessionId(
       sessionId
     );
 
     const updatedUser: User | null =
-      await this.userPersistenceService.updateUser(
-        targetUser.id,
-        updateUserArgsDto
-      );
+      await this.userPersistenceService.updateUser(targetUser.id, {
+        firstName,
+        lastName,
+      });
 
     if (!updatedUser) {
       throw new Error(
