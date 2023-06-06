@@ -23,6 +23,7 @@ import {
 import { mapUserDomainToDto } from "../aup/mappers/domain-to-dto";
 import {
   ExpiredUserSessionCannotBeDeletedError,
+  InvalidOldPasswordInputError,
   InvalidUserCredentialsError,
   UserAccountCannotBeCreatedError,
   UserAccountCannotBeDeactivatedError,
@@ -31,12 +32,16 @@ import {
   UserAccountHasNoAssociatedSecretError,
   UserAccountRollbackError,
   UserDeviceCannotBeCreatedError,
+  UserEmailCannotBeUpdatedError,
   UserEmailIsNotAvailableError,
   UserIsNotAuthenticatedError,
+  UserNameCannotBeUpdatedError,
   UserSecretCannotBeCreatedError,
+  UserSecretCannotBeUpdatedError,
   UserSessionCannotBeCreatedError,
   UserSessionCannotBeDeletedError,
   UserSessionHasExpiredError,
+  UserUsernameCannotBeUpdatedError,
 } from "@shared/custom-errors";
 
 export class UserManagementController {
@@ -172,11 +177,7 @@ export class UserManagementController {
       await this.userPersistenceService.updateUser(targetUser.id, { email });
 
     if (!updatedUser) {
-      throw new Error(
-        JSON.stringify({
-          message: "Couldn't update user email!",
-        })
-      );
+      throw new UserEmailCannotBeUpdatedError(targetUser.id);
     }
   }
 
@@ -195,7 +196,7 @@ export class UserManagementController {
     );
 
     if (!isMatchingPassword) {
-      throw new Error("Old password is invalid!");
+      throw new InvalidOldPasswordInputError();
     }
 
     validatePasswordString(newPassword);
@@ -212,11 +213,7 @@ export class UserManagementController {
       });
 
     if (!updatedUserSecret) {
-      throw new Error(
-        JSON.stringify({
-          message: "Couldn't update user secret!",
-        })
-      );
+      throw new UserSecretCannotBeUpdatedError(targetUser.id);
     }
   }
 
@@ -234,11 +231,7 @@ export class UserManagementController {
       await this.userPersistenceService.updateUser(targetUser.id, { username });
 
     if (!updatedUser) {
-      throw new Error(
-        JSON.stringify({
-          message: "Couldn't update user username!",
-        })
-      );
+      throw new UserUsernameCannotBeUpdatedError(targetUser.id);
     }
   }
 
@@ -262,11 +255,7 @@ export class UserManagementController {
       });
 
     if (!updatedUser) {
-      throw new Error(
-        JSON.stringify({
-          message: "Couldn't perform user update operation!",
-        })
-      );
+      throw new UserNameCannotBeUpdatedError(targetUser.id);
     }
 
     return updatedUser;

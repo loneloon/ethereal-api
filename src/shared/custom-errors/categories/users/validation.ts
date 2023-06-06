@@ -58,3 +58,51 @@ export class UserEmailIsNotAvailableError extends CustomError {
     super({});
   }
 }
+
+export class UsernameTooShortError extends CustomError {
+  readonly httpCode: number = 400;
+  readonly platformCode: string = "E1036";
+  protected readonly internalOnly: boolean = false;
+  protected readonly messageTemplate: string =
+    "Invalid username! Username should be at least {minLength} characters long!";
+
+  constructor(minLength: number, actualLength: number) {
+    super({ minLength, actualLength });
+  }
+}
+
+export class UsernameTooLongError extends CustomError {
+  readonly httpCode: number = 400;
+  readonly platformCode: string = "E1037";
+  protected readonly internalOnly: boolean = false;
+  protected readonly messageTemplate: string =
+    "Invalid username! Username can be {maxLength} characters long maximum!";
+
+  constructor(maxLength: number, actualLength: number) {
+    super({ maxLength, actualLength });
+  }
+}
+
+export class UsernameInvalidFormatError extends CustomError {
+  readonly httpCode: number = 400;
+  readonly platformCode: string = "E1038";
+  protected readonly internalOnly: boolean = false;
+  protected readonly messageTemplate: string =
+    "Invalid username format! Username can only contain upper/lowercase letters and digits!";
+
+  constructor() {
+    super({});
+  }
+}
+
+export class UserNameInvalidFormatError extends CustomError {
+  readonly httpCode: number = 400;
+  readonly platformCode: string = "E1039";
+  protected readonly internalOnly: boolean = false;
+  protected readonly messageTemplate: string =
+    "Invalid name format! Only english letters and punctuation symbols (,.'-) may be included!";
+
+  constructor() {
+    super({});
+  }
+}

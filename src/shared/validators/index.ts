@@ -1,8 +1,12 @@
 import {
   UserEmailInvalidFormatError,
+  UserNameInvalidFormatError,
   UserPasswordInvalidFormatError,
   UserPasswordTooLongError,
   UserPasswordTooShortError,
+  UsernameInvalidFormatError,
+  UsernameTooLongError,
+  UsernameTooShortError,
 } from "../custom-errors";
 
 export function validateEmailString(email: string): void {
@@ -20,34 +24,18 @@ export function validateUsernameString(username: string): void {
   const maxLength = 12;
 
   if (username.length < minLength) {
-    throw new Error(
-      JSON.stringify({
-        message: `Invalid username! Username should be at least ${minLength} characters long!`,
-        username,
-      })
-    );
+    throw new UsernameTooShortError(minLength, username.length);
   }
 
   if (username.length > maxLength) {
-    throw new Error(
-      JSON.stringify({
-        message: `Invalid username! Username can be ${maxLength} characters long maximum!`,
-        username,
-      })
-    );
+    throw new UsernameTooLongError(maxLength, username.length);
   }
 
   const usernameRegex = /^[A-Za-z0-9]*$/;
   const substringMatch = username.match(usernameRegex);
 
   if (!substringMatch || substringMatch[0] !== username) {
-    throw new Error(
-      JSON.stringify({
-        message:
-          "Invalid username format! Username can only contain upper/lowercase letters and digits!",
-        username,
-      })
-    );
+    throw new UsernameInvalidFormatError();
   }
 }
 
@@ -56,13 +44,7 @@ export function validateFirstOrLastNameString(name: string): void {
   const substringMatch = name.match(nameRegex);
 
   if (!substringMatch || substringMatch[0] !== name) {
-    throw new Error(
-      JSON.stringify({
-        message:
-          "Invalid name format! Only english letters and punctuation symbols (,.'-) should be included!",
-        name,
-      })
-    );
+    throw new UserNameInvalidFormatError();
   }
 }
 

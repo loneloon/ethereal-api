@@ -14,7 +14,7 @@ export const signUpUser = async (
       body.password
     );
   } catch (error: any) {
-    context.res.status(400).json(error.dto);
+    context.res.status(error.httpCode).json(error.dto);
     return;
   }
 
@@ -56,7 +56,7 @@ export const signInUser = async (
       .json({ message: "User authentication successful!" });
     return;
   } catch (error: any) {
-    context.res.status(403).json(error.dto);
+    context.res.status(error.httpCode).json(error.dto);
     return;
   }
 };
@@ -72,7 +72,7 @@ export const signOutUser = async (
 
     await userManagementController.terminatePlatformUserSession(sessionId);
   } catch (error: any) {
-    context.res.status(400).json(error.dto);
+    context.res.status(error.httpCode).json(error.dto);
     return;
   }
 
