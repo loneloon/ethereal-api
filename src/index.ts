@@ -8,7 +8,16 @@ import { UserManagementController } from "./controllers/user-management-controll
 import clients from "./prisma-clients";
 import express from "express";
 import cors from "cors";
-import { getUser, signUpUser, signInUser, signOutUser } from "./handlers";
+import {
+  getUser,
+  signUpUser,
+  signInUser,
+  signOutUser,
+  updateUserPassword,
+  updateUserEmail,
+  updateUserUsername,
+  updateUserName,
+} from "./handlers";
 import { SecretProcessingService } from "./ssd/services/secret-processing-service";
 import { Espeon } from "espeon";
 
@@ -102,6 +111,22 @@ async function main(): Promise<void> {
 
   app.get("/user/account", (req, res) =>
     getUser({ req, res }, userManagementController)
+  );
+
+  app.post("/user/update/password", (req, res) =>
+    updateUserPassword({ req, res }, userManagementController)
+  );
+
+  app.post("/user/update/email", (req, res) =>
+    updateUserEmail({ req, res }, userManagementController)
+  );
+
+  app.post("/user/update/username", (req, res) =>
+    updateUserUsername({ req, res }, userManagementController)
+  );
+
+  app.post("/user/update/name", (req, res) =>
+    updateUserName({ req, res }, userManagementController)
   );
 
   app.listen(config.port, () => {

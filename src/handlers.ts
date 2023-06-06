@@ -100,6 +100,104 @@ export const getUser = async (
   }
 };
 
+export const updateUserEmail = async (
+  context: { req: Request; res: Response },
+  userManagementController: UserManagementController
+): Promise<void> => {
+  const body = context.req.body;
+
+  try {
+    const sessionId = (
+      await resolveAuthContext(context, userManagementController)
+    ).sessionId;
+
+    await userManagementController.changePlatformUserEmail(
+      sessionId,
+      body.email
+    );
+    context.res
+      .status(200)
+      .json(
+        "User's email address was successfully updated! Please verify it through the email we've sent to your mailbox!"
+      );
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
+export const updateUserPassword = async (
+  context: { req: Request; res: Response },
+  userManagementController: UserManagementController
+): Promise<void> => {
+  const body = context.req.body;
+
+  try {
+    const sessionId = (
+      await resolveAuthContext(context, userManagementController)
+    ).sessionId;
+
+    await userManagementController.changePlatformUserPassword(
+      sessionId,
+      body.oldPassword,
+      body.newPassword
+    );
+    context.res.status(200).json("User's password was successfully updated!");
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
+export const updateUserUsername = async (
+  context: { req: Request; res: Response },
+  userManagementController: UserManagementController
+): Promise<void> => {
+  const body = context.req.body;
+
+  try {
+    const sessionId = (
+      await resolveAuthContext(context, userManagementController)
+    ).sessionId;
+
+    await userManagementController.changePlatformUserUsername(
+      sessionId,
+      body.username
+    );
+    context.res.status(200).json("User's username was successfully updated!");
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
+export const updateUserName = async (
+  context: { req: Request; res: Response },
+  userManagementController: UserManagementController
+): Promise<void> => {
+  const body = context.req.body;
+
+  try {
+    const sessionId = (
+      await resolveAuthContext(context, userManagementController)
+    ).sessionId;
+
+    await userManagementController.changePlatformUserName(
+      sessionId,
+      body.firstName,
+      body.lastName
+    );
+    context.res.status(200).json("User's name was successfully updated!");
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
 async function resolveAuthContext(
   context: { req: Request; res: Response },
   userManagementController: UserManagementController

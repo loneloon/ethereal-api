@@ -215,6 +215,8 @@ export class UserManagementController {
     if (!updatedUserSecret) {
       throw new UserSecretCannotBeUpdatedError(targetUser.id);
     }
+
+    // TODO: We need to terminate all other user's sessions except for this device
   }
 
   async changePlatformUserUsername(
