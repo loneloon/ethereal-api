@@ -117,9 +117,10 @@ export const updateUserEmail = async (
     );
     context.res
       .status(200)
-      .json(
-        "User's email address was successfully updated! Please verify it through the email we've sent to your mailbox!"
-      );
+      .json({
+        message:
+          "User's email address was successfully updated! Please verify it through the email we've sent to your mailbox!",
+      });
     return;
   } catch (error: any) {
     context.res.status(error.httpCode).json(error.dto);
@@ -143,7 +144,9 @@ export const updateUserPassword = async (
       body.oldPassword,
       body.newPassword
     );
-    context.res.status(200).json("User's password was successfully updated!");
+    context.res
+      .status(200)
+      .json({ message: "User's password was successfully updated!" });
     return;
   } catch (error: any) {
     context.res.status(error.httpCode).json(error.dto);
@@ -166,7 +169,9 @@ export const updateUserUsername = async (
       sessionId,
       body.username
     );
-    context.res.status(200).json("User's username was successfully updated!");
+    context.res
+      .status(200)
+      .json({ message: "User's username was successfully updated!" });
     return;
   } catch (error: any) {
     context.res.status(error.httpCode).json(error.dto);
@@ -190,7 +195,9 @@ export const updateUserName = async (
       body.firstName,
       body.lastName
     );
-    context.res.status(200).json("User's name was successfully updated!");
+    context.res
+      .status(200)
+      .json({ message: "User's name was successfully updated!" });
     return;
   } catch (error: any) {
     context.res.status(error.httpCode).json(error.dto);
