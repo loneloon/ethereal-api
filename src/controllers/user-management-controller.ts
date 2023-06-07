@@ -179,7 +179,13 @@ export class UserManagementController {
     if (!updatedUser) {
       throw new UserEmailCannotBeUpdatedError(targetUser.id);
     }
+
+    // TODO: Implement mailing service & email verification handler + temporary verification tokens table
+    // Additionally disallow app linking and extended permissions if email is unverified
   }
+
+  // TODO: All update operations should check if new submitted values are different from the old ones.
+  // Disallow update if equal
 
   async changePlatformUserPassword(
     sessionId: string,
