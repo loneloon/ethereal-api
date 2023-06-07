@@ -137,7 +137,7 @@ export class UserManagementController {
     }
   }
 
-  private async verifyPlatformUserPassword(
+  private async verifyPlatformUserSecret(
     userId: string,
     password: string
   ): Promise<boolean> {
@@ -199,7 +199,7 @@ export class UserManagementController {
       sessionId
     );
 
-    const isMatchingPassword = await this.verifyPlatformUserPassword(
+    const isMatchingPassword = await this.verifyPlatformUserSecret(
       targetUser.id,
       oldPassword
     );
@@ -494,7 +494,7 @@ export class UserManagementController {
       }
     }
 
-    const isMatchingPassword: boolean = await this.verifyPlatformUserPassword(
+    const isMatchingPassword: boolean = await this.verifyPlatformUserSecret(
       targetUser.id,
       password
     );
