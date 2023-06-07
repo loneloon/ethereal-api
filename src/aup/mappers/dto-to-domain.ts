@@ -34,6 +34,7 @@ export function mapUserProjectionDtoToDomain(
     userProjectionDto.appId,
     userProjectionDto.isActive,
     userProjectionDto.alias,
+    userProjectionDto.appData ? JSON.parse(userProjectionDto.appData) : null,
     new Metadata(
       DateTime.fromJSDate(userProjectionDto.createdAt),
       DateTime.fromJSDate(userProjectionDto.updatedAt),

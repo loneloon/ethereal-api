@@ -31,6 +31,7 @@ model UserProjection {
   userId            String      
   isActive          Boolean           @default(true)
   alias             String?
+  appData           String?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 

@@ -6,6 +6,7 @@ export class UserProjection {
     readonly appId: string,
     readonly isActive: boolean,
     readonly alias: string | null,
+    readonly appData: { [key: string]: string | number } | null,
     readonly metadata: Metadata
   ) {}
 }
