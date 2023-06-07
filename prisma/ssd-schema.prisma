@@ -22,11 +22,14 @@ model Session {
 }
 
 model Secret {
-    userId            String            @unique
+    externalId        String
+    type              String
     passHash          String
     salt              String
     createdAt         DateTime          @default(now())
     updatedAt         DateTime          @updatedAt
+
+    @@unique(fields: [externalId, type])
 }
 
 model Device {

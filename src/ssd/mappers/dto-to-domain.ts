@@ -3,7 +3,7 @@ import {
   Secret as SecretDto,
   Device as DeviceDto,
 } from "@prisma-dual-cli/generated/ssd-client";
-import { Secret } from "../models/secret";
+import { Secret, SecretType } from "../models/secret";
 import { Session } from "../models/session";
 import { Device } from "../models/device";
 import { DateTime } from "luxon";
@@ -25,7 +25,8 @@ export function mapSessionDtoToDomain(sessionDto: SessionDto): Session {
 
 export function mapSecretDtoToDomain(secretDto: SecretDto): Secret {
   return new Secret(
-    secretDto.userId,
+    secretDto.externalId,
+    secretDto.type as SecretType,
     secretDto.passHash,
     secretDto.salt,
     new Metadata(

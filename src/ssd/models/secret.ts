@@ -1,8 +1,11 @@
 import { Metadata } from "@shared/models/common";
 
+export type SecretType = "USER" | "APP";
+
 export class Secret {
   constructor(
-    readonly userId: string,
+    readonly externalId: string,
+    readonly type: SecretType,
     readonly passHash: string,
     readonly salt: string,
     readonly metadata: Metadata

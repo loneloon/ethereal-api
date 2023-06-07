@@ -4,14 +4,15 @@ import {
   Secret as SecretDto,
   Prisma,
 } from "@prisma-dual-cli/generated/ssd-client";
-import { Secret } from "../models/secret";
+import { Secret, SecretType } from "../models/secret";
 import { mapSecretDtoToDomain } from "../mappers/dto-to-domain";
 
 // BE CAREFUL WITH FIELD NAMES IN THESE INTERFACES,
 // THEY MUST MATCH THE SCHEMA EXACTLY!
 
 export interface CreateSecretArgsDto {
-  userId: string;
+  externalId: string;
+  type: SecretType;
   passHash: string;
   salt: string;
 }
@@ -34,7 +35,7 @@ export class SecretPersistenceService extends PrismaBasedPersistenceService<
   protected readonly modelAccessor: Prisma.SecretDelegate<
     Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined
   > & { create: any; findMany: any; findUnique: any; update: any; delete: any };
-  protected readonly isPrimaryKeyComposite: boolean = false;
+  protected readonly isPrimaryKeyComposite: boolean = true;
 
   constructor(readonly prismaClient: PrismaSsdClient) {
     super();
@@ -50,30 +51,37 @@ export class SecretPersistenceService extends PrismaBasedPersistenceService<
     return createdSecretDto ? mapSecretDtoToDomain(createdSecretDto) : null;
   }
 
-  async getSecretByUserId(userId: string): Promise<Secret | null> {
+  async getSecret(
+    externalId: string,
+    type: SecretType
+  ): Promise<Secret | null> {
     const secretDto: SecretDto | null = await this.getUniqueEntity(
-      "userId",
-      userId
+      "externalId_type",
+      { externalId, type }
     );
     return secretDto ? mapSecretDtoToDomain(secretDto) : null;
   }
 
   async updateSecret(
-    userId: string,
+    externalId: string,
+    type: SecretType,
     updateSecretArgsDto: UpdateSecretArgsDto
   ): Promise<Secret | null> {
     const updatedSecretDto: SecretDto | null = await this.updateEntity(
-      "userId",
-      userId,
+      "externalId_type",
+      { externalId, type },
       updateSecretArgsDto
     );
     return updatedSecretDto ? mapSecretDtoToDomain(updatedSecretDto) : null;
   }
 
-  async deleteSecret(userId: string): Promise<Secret | null> {
+  async deleteSecret(
+    externalId: string,
+    type: SecretType
+  ): Promise<Secret | null> {
     const deletedSecretDto: SecretDto | null = await this.deleteEntity(
-      "userId",
-      userId
+      "externalId_type",
+      { externalId, type }
     );
     return deletedSecretDto ? mapSecretDtoToDomain(deletedSecretDto) : null;
   }

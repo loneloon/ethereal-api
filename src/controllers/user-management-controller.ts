@@ -63,7 +63,8 @@ export class UserManagementController {
       await this.secretProcessingService.generatePasswordHashAndSalt(password);
     const newSecret: Secret | null =
       await this.secretPersistenceService.createSecret({
-        userId,
+        externalId: userId,
+        type: "USER",
         passHash,
         salt,
       });
@@ -140,8 +141,10 @@ export class UserManagementController {
     userId: string,
     password: string
   ): Promise<boolean> {
-    const secret: Secret | null =
-      await this.secretPersistenceService.getSecretByUserId(userId);
+    const secret: Secret | null = await this.secretPersistenceService.getSecret(
+      userId,
+      "USER"
+    );
 
     if (!secret) {
       throw new UserAccountHasNoAssociatedSecretError(userId);
@@ -213,7 +216,7 @@ export class UserManagementController {
       );
 
     const updatedUserSecret: Secret | null =
-      await this.secretPersistenceService.updateSecret(targetUser.id, {
+      await this.secretPersistenceService.updateSecret(targetUser.id, "USER", {
         passHash,
         salt,
       });
