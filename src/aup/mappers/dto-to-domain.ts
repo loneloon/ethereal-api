@@ -50,6 +50,8 @@ export function mapApplicationDtoToDomain(
     applicationDto.id,
     applicationDto.name,
     applicationDto.url,
+    applicationDto.email,
+    applicationDto.emailIsVerified,
     applicationDto.isActive,
     new Metadata(
       DateTime.fromJSDate(applicationDto.createdAt),

@@ -13,11 +13,14 @@ import { mapApplicationDtoToDomain } from "../mappers/dto-to-domain";
 export interface CreateApplicationArgsDto {
   name: string;
   url: string;
+  email: string;
 }
 
 export interface UpdateApplicationArgsDto {
   name?: string;
   url?: string;
+  email?: string;
+  emailIsVerified?: boolean;
   isActive?: boolean;
 }
 
@@ -53,6 +56,15 @@ export class AppPersistenceService extends PrismaBasedPersistenceService<
 
   async getApplicationById(id: string): Promise<Application | null> {
     const appDto: ApplicationDto | null = await this.getUniqueEntity("id", id);
+
+    return appDto ? mapApplicationDtoToDomain(appDto) : null;
+  }
+
+  async getApplicationByName(name: string): Promise<Application | null> {
+    const appDto: ApplicationDto | null = await this.getUniqueEntity(
+      "name",
+      name
+    );
 
     return appDto ? mapApplicationDtoToDomain(appDto) : null;
   }

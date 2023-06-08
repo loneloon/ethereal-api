@@ -1,5 +1,4 @@
 import {
-  UserEmailInvalidFormatError,
   UserNameInvalidFormatError,
   UserPasswordInvalidFormatError,
   UserPasswordTooLongError,
@@ -8,6 +7,7 @@ import {
   UsernameTooLongError,
   UsernameTooShortError,
 } from "../custom-errors";
+import { EmailInvalidFormatError } from "../custom-errors/categories/common/validation";
 
 export function validateEmailString(email: string): void {
   const emailRegEx =
@@ -15,7 +15,7 @@ export function validateEmailString(email: string): void {
   const substringMatch = email.match(emailRegEx);
 
   if (!substringMatch || substringMatch[0] !== email) {
-    throw new UserEmailInvalidFormatError();
+    throw new EmailInvalidFormatError();
   }
 }
 

@@ -40,8 +40,10 @@ model UserProjection {
 
 model Application {
   id                String            @id @default(uuid())
-  name              String
+  name              String            @unique
   url               String
+  email             String
+  emailIsVerified   Boolean           @default(false)
   isActive          Boolean           @default(true)
   users             UserProjection[]
   createdAt         DateTime          @default(now())
