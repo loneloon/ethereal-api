@@ -342,7 +342,7 @@ export const getApp = async (
   context: { req: Request; res: Response },
   appManagementController: AppManagementController
 ): Promise<void> => {
-  const params = context.req.params;
+  const params = context.req.query as any;
 
   try {
     const appDto = await appManagementController.getApp(
