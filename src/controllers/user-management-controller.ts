@@ -246,7 +246,7 @@ export class UserManagementController {
     sessionId: string,
     firstName: string,
     lastName: string
-  ): Promise<User> {
+  ): Promise<void> {
     validateFirstOrLastNameString(firstName);
 
     validateFirstOrLastNameString(lastName);
@@ -264,8 +264,6 @@ export class UserManagementController {
     if (!updatedUser) {
       throw new UserNameCannotBeUpdatedError(targetUser.id);
     }
-
-    return updatedUser;
   }
 
   async deactivatePlatformUser(sessionId: string): Promise<void> {
@@ -377,7 +375,7 @@ export class UserManagementController {
       console.warn(
         JSON.stringify({
           message:
-            "Warning! Zombie session detected! There is an active session record that is linked to a deactivated user. Cannot resolve platform user!",
+            "[CRITICAL] Zombie session detected! There is an active session record that is linked to a deactivated user. Cannot resolve platform user!",
           sessionId: session.id,
           userId: session.userId,
         })

@@ -9,6 +9,7 @@ import _ from "lodash";
 import { validateEmailString } from "../shared/validators";
 import { Application } from "../aup/models/application";
 import {
+  AppDoesntExistAnymoreWithAccessKeysError,
   AppHasNoAssociatedSecretError,
   InvalidAppAccessKeyError,
   InvalidAppCredentialsError,
@@ -18,7 +19,10 @@ import {
   AppRollbackError,
   AppSecretCannotBeCreatedError,
 } from "../shared/custom-errors/categories/app/registration";
-import { AppSecretCannotBeUpdatedError } from "../shared/custom-errors/categories/app/update";
+import {
+  AppNameCannotBeUpdatedError,
+  AppSecretCannotBeUpdatedError,
+} from "../shared/custom-errors/categories/app/update";
 import { AppNameIsNotAvailableError } from "../shared/custom-errors/categories/app/validation";
 import { ApplicationKeysDto } from "../ssd/dtos/authentication";
 import { mapApplicationDomainToPublicApplicationViewDto } from "../aup/mappers/domain-to-dto";
@@ -85,10 +89,10 @@ export class AppManagementController {
     return true;
   }
 
-  private async verifyAppSecret(
+  private async resolveAppByAccessKey(
     accessKeyId: string,
     secretAccessKey: string
-  ): Promise<boolean> {
+  ): Promise<Application> {
     const secretId: string =
       this.secretProcessingService.encryptionService.decrypt(accessKeyId);
     const unverifiedHash: string =
@@ -103,7 +107,40 @@ export class AppManagementController {
       throw new InvalidAppAccessKeyError();
     }
 
-    return _.isEqual(unverifiedHash, secret.passHash);
+    if (!_.isEqual(unverifiedHash, secret.passHash)) {
+      throw new InvalidAppAccessKeyError();
+    }
+
+    const app: Application | null =
+      await this.appPersistenceService.getApplicationById(secret.externalId);
+
+    if (!app) {
+      // This can happen if an application record was hard deleted but related secret wasn't deleted before/after that
+      // We can communicate that application doesn't exist anymore, but this is considered a critical error and requires manual action
+      console.warn(
+        JSON.stringify({
+          message:
+            "[CRITICAL] Orphan secret detected! There is a leftover secret record that is linked to an app that doesn't exist anymore. Cannot resolve application!",
+          appId: secret.externalId,
+        })
+      );
+      throw new AppDoesntExistAnymoreWithAccessKeysError(secret.externalId);
+    }
+
+    if (!app.isActive) {
+      // This can happen if an application record was deactivated but related secret wasn't deleted before/after that
+      // We can communicate that application doesn't exist anymore, but this is considered a critical error and requires manual action
+      console.warn(
+        JSON.stringify({
+          message:
+            "[CRITICAL] Orphan secret detected! There is a leftover secret record that is linked to a deactivated app. Cannot resolve application!",
+          appId: secret.externalId,
+        })
+      );
+      throw new AppDoesntExistAnymoreWithAccessKeysError(secret.externalId);
+    }
+
+    return app;
   }
 
   public async resetAccessKeys(
@@ -249,7 +286,77 @@ export class AppManagementController {
     );
   }
 
-  public async updateApp() {}
+  public async updateAppName(
+    accessKeyId: string,
+    secretAccessKey: string,
+    name: string
+  ): Promise<void> {
+    const targetApp: Application = await this.resolveAppByAccessKey(
+      accessKeyId,
+      secretAccessKey
+    );
+
+    const isAppNameAvailable: boolean = await this.checkAppNameAvailability(
+      name
+    );
+
+    if (!isAppNameAvailable) {
+      throw new AppNameIsNotAvailableError(name);
+    }
+
+    const updatedApp: Application | null =
+      await this.appPersistenceService.updateApplication(targetApp.id, {
+        name,
+      });
+
+    if (!updatedApp) {
+      throw new AppNameCannotBeUpdatedError(targetApp.id);
+    }
+  }
+
+  public async updateAppUrl(
+    accessKeyId: string,
+    secretAccessKey: string,
+    url: string
+  ): Promise<void> {
+    const targetApp: Application = await this.resolveAppByAccessKey(
+      accessKeyId,
+      secretAccessKey
+    );
+
+    // TODO: Url string validator
+
+    const updatedApp: Application | null =
+      await this.appPersistenceService.updateApplication(targetApp.id, {
+        url,
+      });
+
+    if (!updatedApp) {
+      throw new AppNameCannotBeUpdatedError(targetApp.id);
+    }
+  }
+
+  public async updateAppEmail(
+    accessKeyId: string,
+    secretAccessKey: string,
+    email: string
+  ): Promise<void> {
+    const targetApp: Application = await this.resolveAppByAccessKey(
+      accessKeyId,
+      secretAccessKey
+    );
+
+    validateEmailString(email);
+
+    const updatedApp: Application | null =
+      await this.appPersistenceService.updateApplication(targetApp.id, {
+        email,
+      });
+
+    if (!updatedApp) {
+      throw new AppNameCannotBeUpdatedError(targetApp.id);
+    }
+  }
 
   public async getAppUsers() {}
 }

@@ -35,3 +35,27 @@ export class InvalidAppCredentialsError extends CustomError {
     super({});
   }
 }
+
+export class AppDoesntExistAnymoreError extends CustomError {
+  readonly httpCode: number = 404;
+  readonly platformCode: string = "E1063";
+  protected readonly internalOnly: boolean = false;
+  protected readonly messageTemplate: string =
+    "Application doesn't exist anymore!";
+
+  constructor(appId: string) {
+    super({ appId });
+  }
+}
+
+export class AppDoesntExistAnymoreWithAccessKeysError extends CustomError {
+  readonly httpCode: number = 404;
+  readonly platformCode: string = "E1064";
+  protected readonly internalOnly: boolean = false;
+  protected readonly messageTemplate: string =
+    "Application doesn't exist anymore! Associated app keys have been invalidated!";
+
+  constructor(appId: string) {
+    super({ appId });
+  }
+}
