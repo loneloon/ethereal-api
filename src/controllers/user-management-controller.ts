@@ -154,7 +154,7 @@ export class UserManagementController {
     );
   }
 
-  async changePlatformUserEmail(
+  async updatePlatformUserEmail(
     sessionId: string,
     email: string
   ): Promise<void> {
@@ -186,7 +186,7 @@ export class UserManagementController {
   // TODO: All update operations should check if new submitted values are different from the old ones.
   // Disallow update if equal
 
-  async changePlatformUserPassword(
+  async updatePlatformUserPassword(
     sessionId: string,
     oldPassword: string,
     newPassword: string
@@ -224,7 +224,7 @@ export class UserManagementController {
     // TODO: We need to terminate all other user's sessions except for this device
   }
 
-  async changePlatformUserUsername(
+  async updatePlatformUserUsername(
     sessionId: string,
     username: string
   ): Promise<void> {
@@ -242,7 +242,7 @@ export class UserManagementController {
     }
   }
 
-  async changePlatformUserName(
+  async updatePlatformUserName(
     sessionId: string,
     firstName: string,
     lastName: string

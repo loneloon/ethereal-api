@@ -112,7 +112,7 @@ export const updateUserEmail = async (
       await resolveAuthContext(context, userManagementController)
     ).sessionId;
 
-    await userManagementController.changePlatformUserEmail(
+    await userManagementController.updatePlatformUserEmail(
       sessionId,
       body.email
     );
@@ -138,7 +138,7 @@ export const updateUserPassword = async (
       await resolveAuthContext(context, userManagementController)
     ).sessionId;
 
-    await userManagementController.changePlatformUserPassword(
+    await userManagementController.updatePlatformUserPassword(
       sessionId,
       body.oldPassword,
       body.newPassword
@@ -164,7 +164,7 @@ export const updateUserUsername = async (
       await resolveAuthContext(context, userManagementController)
     ).sessionId;
 
-    await userManagementController.changePlatformUserUsername(
+    await userManagementController.updatePlatformUserUsername(
       sessionId,
       body.username
     );
@@ -189,7 +189,7 @@ export const updateUserName = async (
       await resolveAuthContext(context, userManagementController)
     ).sessionId;
 
-    await userManagementController.changePlatformUserName(
+    await userManagementController.updatePlatformUserName(
       sessionId,
       body.firstName,
       body.lastName
@@ -262,6 +262,75 @@ export const getAllApps = async (
     const publicAppViewDtos = await appManagementController.getAllPublicApps();
 
     context.res.status(200).json({ apps: publicAppViewDtos });
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
+export const updateAppName = async (
+  context: { req: Request; res: Response },
+  appManagementController: AppManagementController
+): Promise<void> => {
+  const body = context.req.body;
+
+  try {
+    await appManagementController.updateAppName(
+      body.accessKeyId,
+      body.secretAccessKey,
+      body.name
+    );
+
+    context.res
+      .status(200)
+      .json({ message: "Application name was successfully updated!" });
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
+export const updateAppEmail = async (
+  context: { req: Request; res: Response },
+  appManagementController: AppManagementController
+): Promise<void> => {
+  const body = context.req.body;
+
+  try {
+    await appManagementController.updateAppEmail(
+      body.accessKeyId,
+      body.secretAccessKey,
+      body.email
+    );
+
+    context.res
+      .status(200)
+      .json({ message: "Application contact email was successfully updated!" });
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
+export const updateAppUrl = async (
+  context: { req: Request; res: Response },
+  appManagementController: AppManagementController
+): Promise<void> => {
+  const body = context.req.body;
+
+  try {
+    await appManagementController.updateAppUrl(
+      body.accessKeyId,
+      body.secretAccessKey,
+      body.url
+    );
+
+    context.res
+      .status(200)
+      .json({ message: "Application url was successfully updated!" });
     return;
   } catch (error: any) {
     context.res.status(error.httpCode).json(error.dto);

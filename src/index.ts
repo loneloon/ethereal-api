@@ -20,6 +20,9 @@ import {
   registerApp,
   resetAppKeys,
   getAllApps,
+  updateAppName,
+  updateAppEmail,
+  updateAppUrl,
 } from "./handlers";
 import { SecretProcessingService } from "./ssd/services/secret-processing-service";
 import { Espeon } from "espeon";
@@ -152,6 +155,18 @@ async function main(): Promise<void> {
 
   app.post("/app/reset-keys", (req, res) =>
     resetAppKeys({ req, res }, appManagementController)
+  );
+
+  app.post("/app/update/name", (req, res) =>
+    updateAppName({ req, res }, appManagementController)
+  );
+
+  app.post("/app/update/email", (req, res) =>
+    updateAppEmail({ req, res }, appManagementController)
+  );
+
+  app.post("/app/update/url", (req, res) =>
+    updateAppUrl({ req, res }, appManagementController)
   );
 
   app.get("/apps", (req, res) =>
