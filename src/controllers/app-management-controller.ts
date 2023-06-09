@@ -9,12 +9,23 @@ import { v4 as uuid } from "uuid";
 import _ from "lodash";
 import { validateEmailString } from "../shared/validators";
 import { Application } from "../aup/models/application";
+import {
+  AppHasNoAssociatedSecretError,
+  InvalidAppAccessKeyError,
+  InvalidAppCredentialsError,
+} from "../shared/custom-errors/categories/app/authentication";
+import {
+  AppCannotBeCreatedError,
+  AppRollbackError,
+  AppSecretCannotBeCreatedError,
+} from "../shared/custom-errors/categories/app/registration";
+import { AppSecretCannotBeUpdatedError } from "../shared/custom-errors/categories/app/update";
+import { AppNameIsNotAvailableError } from "../shared/custom-errors/categories/app/validation";
 
 export class AppManagementController {
   constructor(
     readonly appPersistenceService: AppPersistenceService,
     readonly userProjectionPersistenceService: UserProjectionPersistenceService,
-    readonly sessionPersistenceService: SessionPersistenceService,
     readonly secretPersistenceService: SecretPersistenceService,
     readonly secretProcessingService: SecretProcessingService
   ) {}
@@ -52,11 +63,24 @@ export class AppManagementController {
       });
 
     if (!newSecret) {
-      throw new Error();
-      // throw new AppSecretCannotBeCreatedError(userId);
+      throw new AppSecretCannotBeCreatedError(appId);
     }
 
     return [newSecret, backupCode];
+  }
+
+  private async checkAppNameAvailability(name: string): Promise<boolean> {
+    const app: Application | null =
+      await this.appPersistenceService.getApplicationByName(name);
+
+    if (app && app.isActive) {
+      return false;
+    } else if (app && !app.isActive) {
+      // TODO: There is a complicated edge-case where we need to account for
+      // previously "deleted" applications, in our logic we deactivate them instead of deleting
+      return false;
+    }
+    return true;
   }
 
   private async verifyAppSecret(accessKeyId: string, secretAccessKey: string) {
@@ -71,23 +95,22 @@ export class AppManagementController {
     );
 
     if (!secret) {
-      throw new Error();
-      // throw new AccessKeyDoesntExist(userId);
+      throw new InvalidAppAccessKeyError();
     }
 
     return _.isEqual(unverifiedHash, secret.passHash);
   }
 
-  private async resetAccessKeys(
+  public async resetAccessKeys(
     name: string,
     email: string,
     backupCode: string
-  ): Promise<[accessKeyId: string, secretAccessKey: string]> {
+  ) {
     const targetApp: Application | null =
       await this.appPersistenceService.getApplicationByName(name);
 
     if (!targetApp || targetApp.email !== email) {
-      throw new InvalidAppCredentials(); // 403 bad app auth
+      throw new InvalidAppCredentialsError();
     }
 
     const secret: Secret | null = await this.secretPersistenceService.getSecret(
@@ -96,7 +119,7 @@ export class AppManagementController {
     );
 
     if (!secret) {
-      throw new AppSecretDoesntExist(); // Critical 500
+      throw new AppHasNoAssociatedSecretError(targetApp.id);
     }
 
     const assumedAppSecretSourceString = this.compileAppSecretSourceString(
@@ -112,20 +135,56 @@ export class AppManagementController {
         secret.salt
       ))
     ) {
-      throw new InvalidAppCredentials(); // 403 bad app auth
+      // Technically it would be more convenient to return "incorrect backup code" error,
+      // but we don't want to encourage backup code bruteforcing so we just throw a general incorrect credentials error
+      throw new InvalidAppCredentialsError();
     }
 
-    // regenerate backupCode
+    const newBackupCode = uuid();
 
-    // update secret
+    const newSecretSource = this.compileAppSecretSourceString(
+      targetApp.name,
+      newBackupCode,
+      targetApp.metadata.creationTimestamp
+    );
 
-    return [];
+    const [passHash, salt] =
+      await this.secretProcessingService.generatePasswordHashAndSalt(
+        newSecretSource
+      );
+    const updatedAppSecret: Secret | null =
+      await this.secretPersistenceService.updateSecret(targetApp.id, "APP", {
+        passHash,
+        salt,
+      });
+
+    if (!updatedAppSecret) {
+      throw new AppSecretCannotBeUpdatedError(targetApp.id);
+    }
+
+    return {
+      accessKeyId: this.secretProcessingService.encryptionService.encrypt(
+        updatedAppSecret.externalId
+      ),
+      secretAccessKey: this.secretProcessingService.encryptionService.encrypt(
+        updatedAppSecret.passHash
+      ),
+      newBackupCode,
+    };
   }
 
   public async registerApp(name: string, email: string, url: string) {
     // INPUT VALIDATORS SECTION
 
     validateEmailString(email);
+
+    const isAppNameAvailable: boolean = await this.checkAppNameAvailability(
+      name
+    );
+
+    if (!isAppNameAvailable) {
+      throw new AppNameIsNotAvailableError(name);
+    }
 
     const newApp: Application | null =
       await this.appPersistenceService.createApplication({
@@ -135,7 +194,7 @@ export class AppManagementController {
       });
 
     if (!newApp) {
-      throw new AppCannotBeCreatedError(name);
+      throw new AppCannotBeCreatedError(name, email, url);
     }
 
     try {
@@ -155,18 +214,16 @@ export class AppManagementController {
         backupCode,
       };
     } catch (error: any) {
-      // This looks nasty, because of the cascading errors (but we need them all)
-      // Refactor if you have a prettier solution
       console.warn("Performing app rollback! Aborting app creation!");
       const deletedApp = await this.appPersistenceService.deleteApplication(
         newApp.id
       );
 
       if (!deletedApp) {
-        throw new AppRollbackError(name, newApp.id);
+        throw new AppRollbackError(name, email, url);
       }
 
-      throw new AppCannotBeCreatedError(name);
+      throw new AppCannotBeCreatedError(name, email, url);
     }
   }
 

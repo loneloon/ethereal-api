@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { UserManagementController } from "./controllers/user-management-controller";
 import { UserIsNotAuthenticatedError } from "./shared/custom-errors/categories/users/authentication";
+import { AppManagementController } from "./controllers/app-management-controller";
 
 export const signUpUser = async (
   context: { req: Request; res: Response },
@@ -115,12 +116,10 @@ export const updateUserEmail = async (
       sessionId,
       body.email
     );
-    context.res
-      .status(200)
-      .json({
-        message:
-          "User's email address was successfully updated! Please verify it through the email we've sent to your mailbox!",
-      });
+    context.res.status(200).json({
+      message:
+        "User's email address was successfully updated! Please verify it through the email we've sent to your mailbox!",
+    });
     return;
   } catch (error: any) {
     context.res.status(error.httpCode).json(error.dto);
@@ -198,6 +197,56 @@ export const updateUserName = async (
     context.res
       .status(200)
       .json({ message: "User's name was successfully updated!" });
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
+export const registerApp = async (
+  context: { req: Request; res: Response },
+  appManagementController: AppManagementController
+): Promise<void> => {
+  const body = context.req.body;
+
+  try {
+    const appKeys = await appManagementController.registerApp(
+      body.name,
+      body.email,
+      body.url
+    );
+
+    context.res.status(200).json({
+      message:
+        "Application registration successful! In order to access app controls please use the provided access key. Backup code will be required to reset the access key.",
+      appKeys,
+    });
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
+export const resetAppKeys = async (
+  context: { req: Request; res: Response },
+  appManagementController: AppManagementController
+): Promise<void> => {
+  const body = context.req.body;
+
+  try {
+    const appKeys = await appManagementController.resetAccessKeys(
+      body.name,
+      body.email,
+      body.backupCode
+    );
+
+    context.res.status(200).json({
+      message:
+        "Application keys were successfully reset! Please use the new access key to manage your app. Old backup code is invalidated! Please use the new backup code if access key reset is needed!",
+      appKeys,
+    });
     return;
   } catch (error: any) {
     context.res.status(error.httpCode).json(error.dto);

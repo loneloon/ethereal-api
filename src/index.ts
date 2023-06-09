@@ -17,9 +17,12 @@ import {
   updateUserEmail,
   updateUserUsername,
   updateUserName,
+  registerApp,
+  resetAppKeys,
 } from "./handlers";
 import { SecretProcessingService } from "./ssd/services/secret-processing-service";
 import { Espeon } from "espeon";
+import { AppManagementController } from "./controllers/app-management-controller";
 
 async function main(): Promise<void> {
   // THIS IS A TEMPORARY SETUP FOR TESTING CONTROLLERS ON THE FLY
@@ -88,6 +91,13 @@ async function main(): Promise<void> {
     secretProcessingService
   );
 
+  const appManagementController = new AppManagementController(
+    applicationPersistenceService,
+    userProjectionPersistenceService,
+    secretPersistenceService,
+    secretProcessingService
+  );
+
   const app: express.Application = express();
   app.use(cors());
   app.use(express.urlencoded());
@@ -97,6 +107,9 @@ async function main(): Promise<void> {
     res.send(`Ethereal API v${process.env.API_VERSION}`);
   });
 
+  //
+  // USER REQUESTS
+  //
   app.post("/user/sign-up", (req, res) =>
     signUpUser({ req, res }, userManagementController)
   );
@@ -127,6 +140,17 @@ async function main(): Promise<void> {
 
   app.post("/user/update/name", (req, res) =>
     updateUserName({ req, res }, userManagementController)
+  );
+
+  //
+  // APP REQUESTS
+  //
+  app.post("/app/register", (req, res) =>
+    registerApp({ req, res }, appManagementController)
+  );
+
+  app.post("/app/reset-keys", (req, res) =>
+    resetAppKeys({ req, res }, appManagementController)
   );
 
   app.listen(config.port, () => {

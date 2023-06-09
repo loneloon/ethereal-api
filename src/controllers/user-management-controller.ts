@@ -103,7 +103,6 @@ export class UserManagementController {
       email
     );
 
-    // TechDebt: Implement custom errors so that they can be properly translated into http response status codes inside api handlers
     if (!isEmailAddressAvailable) {
       throw new UserEmailIsNotAvailableError();
     }
@@ -122,8 +121,6 @@ export class UserManagementController {
         password
       );
     } catch (error: any) {
-      // This looks nasty, because of the cascading errors (but we need them all)
-      // Refactor if you have a prettier solution
       console.warn("Performing user rollback! Aborting user creation!");
       const deletedUser = await this.userPersistenceService.deleteUser(
         newUser.id
@@ -171,7 +168,6 @@ export class UserManagementController {
       email
     );
 
-    // TechDebt: Implement custom errors so that they can be properly translated into http response status codes inside api handlers
     if (!isEmailAddressAvailable) {
       throw new UserEmailIsNotAvailableError();
     }
