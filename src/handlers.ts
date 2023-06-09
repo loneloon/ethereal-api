@@ -338,6 +338,26 @@ export const updateAppUrl = async (
   }
 };
 
+export const getApp = async (
+  context: { req: Request; res: Response },
+  appManagementController: AppManagementController
+): Promise<void> => {
+  const params = context.req.params;
+
+  try {
+    const appDto = await appManagementController.getApp(
+      params.accessKeyId,
+      params.secretAccessKey
+    );
+
+    context.res.status(200).json(appDto);
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
 async function resolveAuthContext(
   context: { req: Request; res: Response },
   userManagementController: UserManagementController

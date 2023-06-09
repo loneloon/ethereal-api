@@ -29,3 +29,16 @@ export function mapApplicationDomainToPublicApplicationViewDto(
     url: app.url,
   };
 }
+
+export function mapApplicationDomainToPrivateApplicationViewDto(
+  app: Application
+): Omit<ApplicationDto, "id" | "isActive"> {
+  return {
+    name: app.name,
+    url: app.url,
+    email: app.email,
+    emailIsVerified: app.emailIsVerified,
+    createdAt: app.metadata.creationTimestamp.toJSDate(),
+    updatedAt: app.metadata.creationTimestamp.toJSDate(),
+  };
+}

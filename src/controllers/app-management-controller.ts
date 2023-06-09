@@ -1,3 +1,4 @@
+import { Application as ApplicationDto } from "@prisma-dual-cli/generated/aup-client";
 import { AppPersistenceService } from "../aup/services/app-persistence-service";
 import { UserProjectionPersistenceService } from "../aup/services/user-projection-persistence-service";
 import { SecretPersistenceService } from "../ssd/services/secret-persistence-service";
@@ -25,7 +26,10 @@ import {
 } from "../shared/custom-errors/categories/app/update";
 import { AppNameIsNotAvailableError } from "../shared/custom-errors/categories/app/validation";
 import { ApplicationKeysDto } from "../ssd/dtos/authentication";
-import { mapApplicationDomainToPublicApplicationViewDto } from "../aup/mappers/domain-to-dto";
+import {
+  mapApplicationDomainToPrivateApplicationViewDto,
+  mapApplicationDomainToPublicApplicationViewDto,
+} from "../aup/mappers/domain-to-dto";
 import { PublicApplicationViewDto } from "../aup/dtos/application";
 
 export class AppManagementController {
@@ -356,6 +360,18 @@ export class AppManagementController {
     if (!updatedApp) {
       throw new AppNameCannotBeUpdatedError(targetApp.id);
     }
+  }
+
+  public async getApp(
+    accessKeyId: string,
+    secretAccessKey: string
+  ): Promise<Omit<ApplicationDto, "id" | "isActive">> {
+    const app: Application = await this.resolveAppByAccessKey(
+      accessKeyId,
+      secretAccessKey
+    );
+
+    return mapApplicationDomainToPrivateApplicationViewDto(app);
   }
 
   public async getAppUsers() {}
