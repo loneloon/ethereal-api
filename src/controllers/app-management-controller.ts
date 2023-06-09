@@ -1,6 +1,5 @@
 import { AppPersistenceService } from "../aup/services/app-persistence-service";
 import { UserProjectionPersistenceService } from "../aup/services/user-projection-persistence-service";
-import { SessionPersistenceService } from "../ssd/services/session-persistence-service";
 import { SecretPersistenceService } from "../ssd/services/secret-persistence-service";
 import { SecretProcessingService } from "../ssd/services/secret-processing-service";
 import { Secret } from "../ssd/models/secret";
@@ -21,6 +20,9 @@ import {
 } from "../shared/custom-errors/categories/app/registration";
 import { AppSecretCannotBeUpdatedError } from "../shared/custom-errors/categories/app/update";
 import { AppNameIsNotAvailableError } from "../shared/custom-errors/categories/app/validation";
+import { ApplicationKeysDto } from "../ssd/dtos/authentication";
+import { mapApplicationDomainToPublicApplicationViewDto } from "../aup/mappers/domain-to-dto";
+import { PublicApplicationViewDto } from "../aup/dtos/application";
 
 export class AppManagementController {
   constructor(
@@ -83,7 +85,10 @@ export class AppManagementController {
     return true;
   }
 
-  private async verifyAppSecret(accessKeyId: string, secretAccessKey: string) {
+  private async verifyAppSecret(
+    accessKeyId: string,
+    secretAccessKey: string
+  ): Promise<boolean> {
     const secretId: string =
       this.secretProcessingService.encryptionService.decrypt(accessKeyId);
     const unverifiedHash: string =
@@ -105,7 +110,7 @@ export class AppManagementController {
     name: string,
     email: string,
     backupCode: string
-  ) {
+  ): Promise<ApplicationKeysDto> {
     const targetApp: Application | null =
       await this.appPersistenceService.getApplicationByName(name);
 
@@ -169,11 +174,15 @@ export class AppManagementController {
       secretAccessKey: this.secretProcessingService.encryptionService.encrypt(
         updatedAppSecret.passHash
       ),
-      newBackupCode,
+      backupCode: newBackupCode,
     };
   }
 
-  public async registerApp(name: string, email: string, url: string) {
+  public async registerApp(
+    name: string,
+    email: string,
+    url: string
+  ): Promise<ApplicationKeysDto> {
     // INPUT VALIDATORS SECTION
 
     validateEmailString(email);
@@ -225,6 +234,19 @@ export class AppManagementController {
 
       throw new AppCannotBeCreatedError(name, email, url);
     }
+  }
+
+  public async getAllPublicApps(): Promise<PublicApplicationViewDto[]> {
+    const allApps: Application[] =
+      await this.appPersistenceService.getAllApplications();
+    const allActiveApps: Application[] = allApps.filter((app) => app.isActive);
+
+    // TechDebt: We don't have this property on application model yet,
+    // but in the future we might need to filter out the applications that choose to remain private/hidden
+
+    return allActiveApps.map((app) =>
+      mapApplicationDomainToPublicApplicationViewDto(app)
+    );
   }
 
   public async updateApp() {}

@@ -254,6 +254,21 @@ export const resetAppKeys = async (
   }
 };
 
+export const getAllApps = async (
+  context: { req: Request; res: Response },
+  appManagementController: AppManagementController
+): Promise<void> => {
+  try {
+    const publicAppViewDtos = await appManagementController.getAllPublicApps();
+
+    context.res.status(200).json({ apps: publicAppViewDtos });
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
 async function resolveAuthContext(
   context: { req: Request; res: Response },
   userManagementController: UserManagementController

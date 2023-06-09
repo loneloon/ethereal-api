@@ -4,6 +4,8 @@ import {
   UserProjection as UserProjectionDto,
 } from "@prisma-dual-cli/generated/aup-client";
 import { User } from "../models/user";
+import { Application } from "../models/application";
+import { PublicApplicationViewDto } from "../dtos/application";
 
 export function mapUserDomainToDto(
   user: User
@@ -16,5 +18,14 @@ export function mapUserDomainToDto(
     lastName: user.lastName,
     createdAt: user.metadata.creationTimestamp.toJSDate(),
     updatedAt: user.metadata.creationTimestamp.toJSDate(),
+  };
+}
+
+export function mapApplicationDomainToPublicApplicationViewDto(
+  app: Application
+): PublicApplicationViewDto {
+  return {
+    name: app.name,
+    url: app.url,
   };
 }
