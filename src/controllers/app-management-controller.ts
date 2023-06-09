@@ -41,21 +41,20 @@ export class AppManagementController {
   ) {}
 
   private compileAppSecretSourceString(
-    appName: string,
+    appId: string,
     uniqueCode: string,
     createdAt: DateTime
   ): string {
-    return appName + uniqueCode + createdAt.toLocaleString();
+    return appId + uniqueCode + createdAt.toLocaleString();
   }
 
   private async createAppSecret(
     appId: string,
-    appName: string,
     createdAt: DateTime
   ): Promise<[secret: Secret, backupCode: string]> {
     const backupCode = uuid();
     const secretSource = this.compileAppSecretSourceString(
-      appName,
+      appId,
       backupCode,
       createdAt
     );
@@ -169,7 +168,7 @@ export class AppManagementController {
     }
 
     const assumedAppSecretSourceString = this.compileAppSecretSourceString(
-      targetApp.name,
+      targetApp.id,
       backupCode,
       targetApp.metadata.creationTimestamp
     );
@@ -189,7 +188,7 @@ export class AppManagementController {
     const newBackupCode = uuid();
 
     const newSecretSource = this.compileAppSecretSourceString(
-      targetApp.name,
+      targetApp.id,
       newBackupCode,
       targetApp.metadata.creationTimestamp
     );
@@ -250,7 +249,6 @@ export class AppManagementController {
     try {
       const [newAppSecret, backupCode] = await this.createAppSecret(
         newApp.id,
-        newApp.name,
         newApp.metadata.creationTimestamp
       );
 
