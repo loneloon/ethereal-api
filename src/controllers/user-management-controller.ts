@@ -37,6 +37,7 @@ import {
   UserIsNotAuthenticatedError,
   UserNameCannotBeUpdatedError,
   UserSecretCannotBeCreatedError,
+  UserSecretCannotBeDeletedError,
   UserSecretCannotBeUpdatedError,
   UserSessionCannotBeCreatedError,
   UserSessionCannotBeDeletedError,
@@ -317,6 +318,8 @@ export class UserManagementController {
     if (!deactivatedUser) {
       throw new UserAccountCannotBeDeactivatedError(targetUser.id);
     }
+
+    await this.deleteUserSecret(deactivatedUser.id);
   }
 
   // TODO: Get all active sessions for user
@@ -513,6 +516,15 @@ export class UserManagementController {
     }
 
     return;
+  }
+
+  private async deleteUserSecret(userId: string): Promise<void> {
+    const deletedSecret: Secret | null =
+      await this.secretPersistenceService.deleteSecret(userId, "USER");
+
+    if (!deletedSecret) {
+      throw new UserSecretCannotBeDeletedError(userId);
+    }
   }
 
   // AppUser (aka UserProjection in AUP model) refers to a connection between PlatformUser and an Application

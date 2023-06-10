@@ -11,3 +11,15 @@ export class UserAccountCannotBeDeactivatedError extends CustomError {
     super({ userId });
   }
 }
+
+export class UserSecretCannotBeDeletedError extends CustomError {
+  readonly httpCode: number = 500;
+  readonly platformCode: string = "E1020.2";
+  protected readonly internalOnly: boolean = true;
+  protected readonly messageTemplate: string =
+    "Couldn't delete user's secret record!";
+
+  constructor(userId: string) {
+    super({ userId });
+  }
+}

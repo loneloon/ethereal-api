@@ -14,17 +14,14 @@ import {
   AppHasNoAssociatedSecretError,
   InvalidAppAccessKeyError,
   InvalidAppCredentialsError,
-} from "../shared/custom-errors/categories/app/authentication";
-import {
   AppCannotBeCreatedError,
   AppRollbackError,
   AppSecretCannotBeCreatedError,
-} from "../shared/custom-errors/categories/app/registration";
-import {
   AppNameCannotBeUpdatedError,
   AppSecretCannotBeUpdatedError,
-} from "../shared/custom-errors/categories/app/update";
-import { AppNameIsNotAvailableError } from "../shared/custom-errors/categories/app/validation";
+  AppNameIsNotAvailableError,
+  AppSecretCannotBeDeletedError,
+} from "../shared/custom-errors";
 import { ApplicationKeysDto } from "../ssd/dtos/authentication";
 import {
   mapApplicationDomainToPrivateApplicationViewDto,
@@ -370,6 +367,36 @@ export class AppManagementController {
     );
 
     return mapApplicationDomainToPrivateApplicationViewDto(app);
+  }
+
+  private async deleteAppSecret(appId: string): Promise<void> {
+    const deletedSecret: Secret | null =
+      await this.secretPersistenceService.deleteSecret(appId, "APP");
+
+    if (!deletedSecret) {
+      throw new AppSecretCannotBeDeletedError(appId);
+    }
+  }
+
+  public async deactivateApp(
+    accessKeyId: string,
+    secretAccessKey: string
+  ): Promise<void> {
+    const targetApp: Application = await this.resolveAppByAccessKey(
+      accessKeyId,
+      secretAccessKey
+    );
+
+    const deactivatedApp: Application | null =
+      await this.appPersistenceService.updateApplication(targetApp.id, {
+        isActive: false,
+      });
+
+    if (!deactivatedApp) {
+      throw new AppNameCannotBeUpdatedError(targetApp.id);
+    }
+
+    await this.deleteAppSecret(deactivatedApp.id);
   }
 
   public async getAppUsers() {}
