@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { UserManagementController } from "./controllers/user-management-controller";
 import { UserIsNotAuthenticatedError } from "./shared/custom-errors/categories/users/authentication";
 import { AppManagementController } from "./controllers/app-management-controller";
+import { MissingArgumentsError } from "./shared/custom-errors/categories/common/validation";
 
 export const signUpUser = async (
   context: { req: Request; res: Response },
@@ -10,6 +11,10 @@ export const signUpUser = async (
   const body = context.req.body;
 
   try {
+    if (!body.email || !body.password) {
+      throw new MissingArgumentsError(["email", "password"]);
+    }
+
     await userManagementController.createPlatformUser(
       body.email,
       body.password
@@ -34,6 +39,10 @@ export const signInUser = async (
   const ip = context.req.ip;
 
   try {
+    if (!body.email || !body.password) {
+      throw new MissingArgumentsError(["email", "password"]);
+    }
+
     const userSession = await userManagementController.signInPlatformUser(
       body.email,
       body.password,
@@ -108,6 +117,10 @@ export const updateUserEmail = async (
   const body = context.req.body;
 
   try {
+    if (!body.email) {
+      throw new MissingArgumentsError(["email"]);
+    }
+
     const sessionId = (
       await resolveAuthContext(context, userManagementController)
     ).sessionId;
@@ -134,6 +147,10 @@ export const updateUserPassword = async (
   const body = context.req.body;
 
   try {
+    if (!body.oldPassword || !body.newPassword) {
+      throw new MissingArgumentsError(["oldPassword", "newPassword"]);
+    }
+
     const sessionId = (
       await resolveAuthContext(context, userManagementController)
     ).sessionId;
@@ -160,6 +177,10 @@ export const updateUserUsername = async (
   const body = context.req.body;
 
   try {
+    if (!body.username) {
+      throw new MissingArgumentsError(["username"]);
+    }
+
     const sessionId = (
       await resolveAuthContext(context, userManagementController)
     ).sessionId;
@@ -185,6 +206,10 @@ export const updateUserName = async (
   const body = context.req.body;
 
   try {
+    if (!body.firstName || !body.lastName) {
+      throw new MissingArgumentsError(["firstName", "lastName"]);
+    }
+
     const sessionId = (
       await resolveAuthContext(context, userManagementController)
     ).sessionId;
@@ -211,6 +236,10 @@ export const registerApp = async (
   const body = context.req.body;
 
   try {
+    if (!body.name || !body.email || !body.url) {
+      throw new MissingArgumentsError(["name", "email", "url"]);
+    }
+
     const appKeys = await appManagementController.registerApp(
       body.name,
       body.email,
@@ -236,6 +265,10 @@ export const resetAppKeys = async (
   const body = context.req.body;
 
   try {
+    if (!body.name || !body.email || !body.backupCode) {
+      throw new MissingArgumentsError(["name", "email", "backupCode"]);
+    }
+
     const appKeys = await appManagementController.resetAccessKeys(
       body.name,
       body.email,
@@ -276,6 +309,14 @@ export const updateAppName = async (
   const body = context.req.body;
 
   try {
+    if (!body.accessKeyId || !body.secretAccessKey || !body.name) {
+      throw new MissingArgumentsError([
+        "accessKeyId",
+        "secretAccessKey",
+        "name",
+      ]);
+    }
+
     await appManagementController.updateAppName(
       body.accessKeyId,
       body.secretAccessKey,
@@ -299,6 +340,14 @@ export const updateAppEmail = async (
   const body = context.req.body;
 
   try {
+    if (!body.accessKeyId || !body.secretAccessKey || !body.email) {
+      throw new MissingArgumentsError([
+        "accessKeyId",
+        "secretAccessKey",
+        "email",
+      ]);
+    }
+
     await appManagementController.updateAppEmail(
       body.accessKeyId,
       body.secretAccessKey,
@@ -322,6 +371,14 @@ export const updateAppUrl = async (
   const body = context.req.body;
 
   try {
+    if (!body.accessKeyId || !body.secretAccessKey || !body.url) {
+      throw new MissingArgumentsError([
+        "accessKeyId",
+        "secretAccessKey",
+        "url",
+      ]);
+    }
+
     await appManagementController.updateAppUrl(
       body.accessKeyId,
       body.secretAccessKey,
@@ -345,6 +402,10 @@ export const getApp = async (
   const params = context.req.query as any;
 
   try {
+    if (!params.accessKeyId || !params.secretAccessKey) {
+      throw new MissingArgumentsError(["accessKeyId", "secretAccessKey"]);
+    }
+
     const appDto = await appManagementController.getApp(
       params.accessKeyId,
       params.secretAccessKey
@@ -364,9 +425,11 @@ export const getAppUsers = async (
 ): Promise<void> => {
   const params = context.req.query as any;
 
-  console.log(params);
-
   try {
+    if (!params.accessKeyId || !params.secretAccessKey) {
+      throw new MissingArgumentsError(["accessKeyId", "secretAccessKey"]);
+    }
+
     const appUsers = await appManagementController.getAppUsers(
       params.accessKeyId,
       params.secretAccessKey
@@ -387,6 +450,10 @@ export const joinApp = async (
   const body = context.req.body;
 
   try {
+    if (!body.appName || !body.alias) {
+      throw new MissingArgumentsError(["appName", "alias"]);
+    }
+
     const sessionId = (
       await resolveAuthContext(context, userManagementController)
     ).sessionId;
