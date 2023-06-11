@@ -59,21 +59,6 @@ export class UserManagementController {
     readonly secretProcessingService: SecretProcessingService
   ) {}
 
-  private async checkEmailAvailability(email: string): Promise<boolean> {
-    const user: User | null = await this.userPersistenceService.getUserByEmail(
-      email
-    );
-
-    if (user && user.isActive) {
-      return false;
-    } else if (user && !user.isActive) {
-      // TODO: There is a complicated edge-case where we need to account for
-      // returning users that previously "deleted" their accounts, but in our logic we deactivate them instead of deleting
-      return false;
-    }
-    return true;
-  }
-
   // ======================================
   //      PLATFORM USER SECRET METHODS
   // ======================================
@@ -397,6 +382,21 @@ export class UserManagementController {
     }
 
     await this.deleteUserSecret(deactivatedUser.id);
+  }
+
+  private async checkEmailAvailability(email: string): Promise<boolean> {
+    const user: User | null = await this.userPersistenceService.getUserByEmail(
+      email
+    );
+
+    if (user && user.isActive) {
+      return false;
+    } else if (user && !user.isActive) {
+      // TODO: There is a complicated edge-case where we need to account for
+      // returning users that previously "deleted" their accounts, but in our logic we deactivate them instead of deleting
+      return false;
+    }
+    return true;
   }
 
   // ======================================

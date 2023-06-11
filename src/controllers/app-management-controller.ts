@@ -40,6 +40,10 @@ export class AppManagementController {
     readonly secretProcessingService: SecretProcessingService
   ) {}
 
+  // ======================================
+  //     APP SECRET/ACCESS-KEY METHODS
+  // ======================================
+
   private compileAppSecretSourceString(
     appId: string,
     uniqueCode: string,
@@ -76,20 +80,6 @@ export class AppManagementController {
     }
 
     return [newSecret, backupCode];
-  }
-
-  private async checkAppNameAvailability(name: string): Promise<boolean> {
-    const app: Application | null =
-      await this.appPersistenceService.getApplicationByName(name);
-
-    if (app && app.isActive) {
-      return false;
-    } else if (app && !app.isActive) {
-      // TODO: There is a complicated edge-case where we need to account for
-      // previously "deleted" applications, in our logic we deactivate them instead of deleting
-      return false;
-    }
-    return true;
   }
 
   private async resolveAppByAccessKey(
@@ -217,6 +207,19 @@ export class AppManagementController {
       backupCode: newBackupCode,
     };
   }
+
+  private async deleteAppSecret(appId: string): Promise<void> {
+    const deletedSecret: Secret | null =
+      await this.secretPersistenceService.deleteSecret(appId, "APP");
+
+    if (!deletedSecret) {
+      throw new AppSecretCannotBeDeletedError(appId);
+    }
+  }
+
+  // ======================================
+  //          GENERAL APP METHODS
+  // ======================================
 
   public async registerApp(
     name: string,
@@ -372,15 +375,6 @@ export class AppManagementController {
     return mapApplicationDomainToPrivateApplicationViewDto(app);
   }
 
-  private async deleteAppSecret(appId: string): Promise<void> {
-    const deletedSecret: Secret | null =
-      await this.secretPersistenceService.deleteSecret(appId, "APP");
-
-    if (!deletedSecret) {
-      throw new AppSecretCannotBeDeletedError(appId);
-    }
-  }
-
   public async deactivateApp(
     accessKeyId: string,
     secretAccessKey: string
@@ -401,6 +395,24 @@ export class AppManagementController {
 
     await this.deleteAppSecret(deactivatedApp.id);
   }
+
+  private async checkAppNameAvailability(name: string): Promise<boolean> {
+    const app: Application | null =
+      await this.appPersistenceService.getApplicationByName(name);
+
+    if (app && app.isActive) {
+      return false;
+    } else if (app && !app.isActive) {
+      // TODO: There is a complicated edge-case where we need to account for
+      // previously "deleted" applications, in our logic we deactivate them instead of deleting
+      return false;
+    }
+    return true;
+  }
+
+  // ======================================
+  //            APP USER METHODS
+  // ======================================
 
   public async getAppUsers(
     accessKeyId: string,
