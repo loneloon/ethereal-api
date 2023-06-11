@@ -26,8 +26,11 @@ import { ApplicationKeysDto } from "../ssd/dtos/authentication";
 import {
   mapApplicationDomainToPrivateApplicationViewDto,
   mapApplicationDomainToPublicApplicationViewDto,
+  mapUserProjectionDomainToAppUserDto,
 } from "../aup/mappers/domain-to-dto";
 import { PublicApplicationViewDto } from "../aup/dtos/application";
+import { UserProjection } from "../aup/models/user-projection";
+import { AppUserDto } from "../aup/dtos/user-projection";
 
 export class AppManagementController {
   constructor(
@@ -399,5 +402,22 @@ export class AppManagementController {
     await this.deleteAppSecret(deactivatedApp.id);
   }
 
-  public async getAppUsers() {}
+  public async getAppUsers(
+    accessKeyId: string,
+    secretAccessKey: string
+  ): Promise<AppUserDto[]> {
+    const appId: string = (
+      await this.resolveAppByAccessKey(accessKeyId, secretAccessKey)
+    ).id;
+
+    const allAppUsers: UserProjection[] =
+      await this.userProjectionPersistenceService.getProjectionsByAppId(appId);
+    const activeAppUsers: UserProjection[] = allAppUsers.filter(
+      (appUser) => appUser.isActive
+    );
+
+    return activeAppUsers.map((userProjection) =>
+      mapUserProjectionDomainToAppUserDto(userProjection)
+    );
+  }
 }

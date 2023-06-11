@@ -24,6 +24,8 @@ import {
   updateAppEmail,
   updateAppUrl,
   getApp,
+  getAppUsers,
+  joinApp,
 } from "./handlers";
 import { SecretProcessingService } from "./ssd/services/secret-processing-service";
 import { Espeon } from "espeon";
@@ -147,6 +149,10 @@ async function main(): Promise<void> {
     updateUserName({ req, res }, userManagementController)
   );
 
+  app.post("/user/join-app", (req, res) =>
+    joinApp({ req, res }, userManagementController)
+  );
+
   //
   // APP REQUESTS
   //
@@ -174,6 +180,10 @@ async function main(): Promise<void> {
 
   app.get("/apps", (req, res) =>
     getAllApps({ req, res }, appManagementController)
+  );
+
+  app.get("/app/users", (req, res) =>
+    getAppUsers({ req, res }, appManagementController)
   );
 
   app.listen(config.port, () => {

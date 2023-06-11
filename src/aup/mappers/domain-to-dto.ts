@@ -6,6 +6,8 @@ import {
 import { User } from "../models/user";
 import { Application } from "../models/application";
 import { PublicApplicationViewDto } from "../dtos/application";
+import { UserProjection } from "../models/user-projection";
+import { AppUserDto } from "../dtos/user-projection";
 
 export function mapUserDomainToDto(
   user: User
@@ -40,5 +42,16 @@ export function mapApplicationDomainToPrivateApplicationViewDto(
     emailIsVerified: app.emailIsVerified,
     createdAt: app.metadata.creationTimestamp.toJSDate(),
     updatedAt: app.metadata.creationTimestamp.toJSDate(),
+  };
+}
+
+export function mapUserProjectionDomainToAppUserDto(
+  userProjection: UserProjection
+): AppUserDto {
+  return {
+    alias: userProjection.alias,
+    createdAt: userProjection.metadata.creationTimestamp.toJSDate(),
+    updatedAt: userProjection.metadata.updatedTimestamp.toJSDate(),
+    appData: userProjection.appData ?? {},
   };
 }

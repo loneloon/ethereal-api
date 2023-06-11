@@ -22,6 +22,7 @@ import {
 } from "@shared/validators";
 import { mapUserDomainToDto } from "../aup/mappers/domain-to-dto";
 import {
+  AppDoesntExistError,
   ExpiredUserSessionCannotBeDeletedError,
   InvalidOldPasswordInputError,
   InvalidUserCredentialsError,
@@ -44,6 +45,8 @@ import {
   UserSessionHasExpiredError,
   UserUsernameCannotBeUpdatedError,
 } from "@shared/custom-errors";
+import { UserProjection } from "../aup/models/user-projection";
+import { AppUserCannotBeCreatedError } from "../shared/custom-errors/categories/app-users";
 
 export class UserManagementController {
   constructor(
@@ -530,7 +533,35 @@ export class UserManagementController {
   // AppUser (aka UserProjection in AUP model) refers to a connection between PlatformUser and an Application
   // that can have additional app-specific data attached to it:
   // i.e. alias, settings, roles, etc.
-  async createAppUser(sessionId: string) {}
+  async createAppUser(
+    sessionId: string,
+    appName: string,
+    alias: string
+  ): Promise<void> {
+    // Check if app user already exists
+
+    const userId: string = (
+      await this.resolvePlatformUserBySessionId(sessionId)
+    ).id;
+    const appId: string | undefined = (
+      await this.appPersistenceService.getApplicationByName(appName)
+    )?.id;
+
+    if (!appId) {
+      throw new AppDoesntExistError(appName);
+    }
+
+    const newAppUser: UserProjection | null =
+      await this.userProjectionPersistenceService.createUserProjection({
+        userId,
+        appId,
+        alias,
+      });
+
+    if (!newAppUser) {
+      throw new AppUserCannotBeCreatedError(appName, userId);
+    }
+  }
 
   async editAppUser(sessionId: string) {}
 

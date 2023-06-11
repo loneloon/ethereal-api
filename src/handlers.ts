@@ -358,6 +358,54 @@ export const getApp = async (
   }
 };
 
+export const getAppUsers = async (
+  context: { req: Request; res: Response },
+  appManagementController: AppManagementController
+): Promise<void> => {
+  const params = context.req.query as any;
+
+  console.log(params);
+
+  try {
+    const appUsers = await appManagementController.getAppUsers(
+      params.accessKeyId,
+      params.secretAccessKey
+    );
+
+    context.res.status(200).json({ users: appUsers });
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
+export const joinApp = async (
+  context: { req: Request; res: Response },
+  userManagementController: UserManagementController
+): Promise<void> => {
+  const body = context.req.body;
+
+  try {
+    const sessionId = (
+      await resolveAuthContext(context, userManagementController)
+    ).sessionId;
+
+    await userManagementController.createAppUser(
+      sessionId,
+      body.appName,
+      body.alias
+    );
+    context.res
+      .status(200)
+      .json({ message: `User has successfully joined '${body.appName}' app!` });
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
 async function resolveAuthContext(
   context: { req: Request; res: Response },
   userManagementController: UserManagementController
