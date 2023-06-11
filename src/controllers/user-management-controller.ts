@@ -208,53 +208,6 @@ export class UserManagementController {
     return mapUserDomainToDto(currentUser);
   }
 
-  async signInPlatformUser(
-    email: string,
-    password: string,
-    userAgent: string,
-    ip: string
-  ): Promise<Session> {
-    const targetUser: User | null =
-      await this.userPersistenceService.getUserByEmail(email);
-
-    if (!targetUser) {
-      throw new InvalidUserCredentialsError();
-    }
-
-    if (!targetUser.isActive) {
-      throw new UserAccountDoesntExistAnymoreError();
-    }
-
-    const userDevice: Device = await this.resolvePlatformUserDevice(
-      userAgent,
-      ip,
-      targetUser.id
-    );
-
-    if (userDevice.sessionId) {
-      try {
-        // If session for this device exists and is active it will be returned
-        // If session exists but is expired it will be wiped and session resolver will throw
-        // If session doesn't exist session resolver will throw
-        return await this.resolveSessionById(userDevice.sessionId);
-      } catch (error: any) {
-        // We can just catch the error here without throwing, this behaviour is expected.
-        // If error logging is enabled, errors will be logged anyway.
-      }
-    }
-
-    const isMatchingPassword: boolean = await this.verifyPlatformUserSecret(
-      targetUser.id,
-      password
-    );
-
-    if (!isMatchingPassword) {
-      throw new InvalidUserCredentialsError();
-    }
-
-    return await this.createPlatformUserSession(userDevice.id, targetUser.id);
-  }
-
   // TODO: All update operations should check if new submitted values are different from the old ones.
   // Disallow update if equal
 
@@ -424,6 +377,53 @@ export class UserManagementController {
     }
 
     return newSession;
+  }
+
+  async signInPlatformUser(
+    email: string,
+    password: string,
+    userAgent: string,
+    ip: string
+  ): Promise<Session> {
+    const targetUser: User | null =
+      await this.userPersistenceService.getUserByEmail(email);
+
+    if (!targetUser) {
+      throw new InvalidUserCredentialsError();
+    }
+
+    if (!targetUser.isActive) {
+      throw new UserAccountDoesntExistAnymoreError();
+    }
+
+    const userDevice: Device = await this.resolvePlatformUserDevice(
+      userAgent,
+      ip,
+      targetUser.id
+    );
+
+    if (userDevice.sessionId) {
+      try {
+        // If session for this device exists and is active it will be returned
+        // If session exists but is expired it will be wiped and session resolver will throw
+        // If session doesn't exist session resolver will throw
+        return await this.resolveSessionById(userDevice.sessionId);
+      } catch (error: any) {
+        // We can just catch the error here without throwing, this behaviour is expected.
+        // If error logging is enabled, errors will be logged anyway.
+      }
+    }
+
+    const isMatchingPassword: boolean = await this.verifyPlatformUserSecret(
+      targetUser.id,
+      password
+    );
+
+    if (!isMatchingPassword) {
+      throw new InvalidUserCredentialsError();
+    }
+
+    return await this.createPlatformUserSession(userDevice.id, targetUser.id);
   }
 
   async terminatePlatformUserSession(sessionId: string): Promise<void> {
