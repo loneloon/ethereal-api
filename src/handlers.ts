@@ -155,7 +155,7 @@ export const updateUserPassword = async (
       await resolveAuthContext(context, userManagementController)
     ).sessionId;
 
-    await userManagementController.updatePlatformUserPassword(
+    await userManagementController.updatePlatformUserSecret(
       sessionId,
       body.oldPassword,
       body.newPassword

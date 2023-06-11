@@ -59,6 +59,25 @@ export class UserManagementController {
     readonly secretProcessingService: SecretProcessingService
   ) {}
 
+  private async checkEmailAvailability(email: string): Promise<boolean> {
+    const user: User | null = await this.userPersistenceService.getUserByEmail(
+      email
+    );
+
+    if (user && user.isActive) {
+      return false;
+    } else if (user && !user.isActive) {
+      // TODO: There is a complicated edge-case where we need to account for
+      // returning users that previously "deleted" their accounts, but in our logic we deactivate them instead of deleting
+      return false;
+    }
+    return true;
+  }
+
+  // ======================================
+  //      PLATFORM USER SECRET METHODS
+  // ======================================
+
   private async createPlatformUserSecret(
     userId: string,
     password: string
@@ -80,20 +99,76 @@ export class UserManagementController {
     return newSecret;
   }
 
-  private async checkEmailAvailability(email: string): Promise<boolean> {
-    const user: User | null = await this.userPersistenceService.getUserByEmail(
-      email
+  private async verifyPlatformUserSecret(
+    userId: string,
+    password: string
+  ): Promise<boolean> {
+    const secret: Secret | null = await this.secretPersistenceService.getSecret(
+      userId,
+      "USER"
     );
 
-    if (user && user.isActive) {
-      return false;
-    } else if (user && !user.isActive) {
-      // TODO: There is a complicated edge-case where we need to account for
-      // returning users that previously "deleted" their accounts, but in our logic we deactivate them instead of deleting
-      return false;
+    if (!secret) {
+      throw new UserAccountHasNoAssociatedSecretError(userId);
     }
-    return true;
+
+    return await this.secretProcessingService.checkPasswordAgainstHash(
+      password,
+      secret.passHash,
+      secret.salt
+    );
   }
+
+  async updatePlatformUserSecret(
+    sessionId: string,
+    oldPassword: string,
+    newPassword: string
+  ): Promise<void> {
+    const targetUser: User = await this.resolvePlatformUserBySessionId(
+      sessionId
+    );
+
+    const isMatchingPassword = await this.verifyPlatformUserSecret(
+      targetUser.id,
+      oldPassword
+    );
+
+    if (!isMatchingPassword) {
+      throw new InvalidOldPasswordInputError();
+    }
+
+    validatePasswordString(newPassword);
+
+    const [passHash, salt] =
+      await this.secretProcessingService.generatePasswordHashAndSalt(
+        newPassword
+      );
+
+    const updatedUserSecret: Secret | null =
+      await this.secretPersistenceService.updateSecret(targetUser.id, "USER", {
+        passHash,
+        salt,
+      });
+
+    if (!updatedUserSecret) {
+      throw new UserSecretCannotBeUpdatedError(targetUser.id);
+    }
+
+    // TODO: We need to terminate all other user's sessions except for this device
+  }
+
+  private async deleteUserSecret(userId: string): Promise<void> {
+    const deletedSecret: Secret | null =
+      await this.secretPersistenceService.deleteSecret(userId, "USER");
+
+    if (!deletedSecret) {
+      throw new UserSecretCannotBeDeletedError(userId);
+    }
+  }
+
+  // ======================================
+  //         PLATFORM USER METHODS
+  // ======================================
 
   // PlatformUser (aka User in AUP model) refers to base/root user account
   // that acts as a central node to all application accounts that user may have
@@ -138,25 +213,65 @@ export class UserManagementController {
     }
   }
 
-  private async verifyPlatformUserSecret(
-    userId: string,
-    password: string
-  ): Promise<boolean> {
-    const secret: Secret | null = await this.secretPersistenceService.getSecret(
-      userId,
-      "USER"
+  async getPlatformUser(
+    sessionId: string
+  ): Promise<Omit<UserDto, "id" | "isActive">> {
+    const currentUser: User = await this.resolvePlatformUserBySessionId(
+      sessionId
     );
 
-    if (!secret) {
-      throw new UserAccountHasNoAssociatedSecretError(userId);
+    return mapUserDomainToDto(currentUser);
+  }
+
+  async signInPlatformUser(
+    email: string,
+    password: string,
+    userAgent: string,
+    ip: string
+  ): Promise<Session> {
+    const targetUser: User | null =
+      await this.userPersistenceService.getUserByEmail(email);
+
+    if (!targetUser) {
+      throw new InvalidUserCredentialsError();
     }
 
-    return await this.secretProcessingService.checkPasswordAgainstHash(
-      password,
-      secret.passHash,
-      secret.salt
+    if (!targetUser.isActive) {
+      throw new UserAccountDoesntExistAnymoreError();
+    }
+
+    const userDevice: Device = await this.resolvePlatformUserDevice(
+      userAgent,
+      ip,
+      targetUser.id
     );
+
+    if (userDevice.sessionId) {
+      try {
+        // If session for this device exists and is active it will be returned
+        // If session exists but is expired it will be wiped and session resolver will throw
+        // If session doesn't exist session resolver will throw
+        return await this.resolveSessionById(userDevice.sessionId);
+      } catch (error: any) {
+        // We can just catch the error here without throwing, this behaviour is expected.
+        // If error logging is enabled, errors will be logged anyway.
+      }
+    }
+
+    const isMatchingPassword: boolean = await this.verifyPlatformUserSecret(
+      targetUser.id,
+      password
+    );
+
+    if (!isMatchingPassword) {
+      throw new InvalidUserCredentialsError();
+    }
+
+    return await this.createPlatformUserSession(userDevice.id, targetUser.id);
   }
+
+  // TODO: All update operations should check if new submitted values are different from the old ones.
+  // Disallow update if equal
 
   async updatePlatformUserEmail(
     sessionId: string,
@@ -185,47 +300,6 @@ export class UserManagementController {
 
     // TODO: Implement mailing service & email verification handler + temporary verification tokens table
     // Additionally disallow app linking and extended permissions if email is unverified
-  }
-
-  // TODO: All update operations should check if new submitted values are different from the old ones.
-  // Disallow update if equal
-
-  async updatePlatformUserPassword(
-    sessionId: string,
-    oldPassword: string,
-    newPassword: string
-  ): Promise<void> {
-    const targetUser: User = await this.resolvePlatformUserBySessionId(
-      sessionId
-    );
-
-    const isMatchingPassword = await this.verifyPlatformUserSecret(
-      targetUser.id,
-      oldPassword
-    );
-
-    if (!isMatchingPassword) {
-      throw new InvalidOldPasswordInputError();
-    }
-
-    validatePasswordString(newPassword);
-
-    const [passHash, salt] =
-      await this.secretProcessingService.generatePasswordHashAndSalt(
-        newPassword
-      );
-
-    const updatedUserSecret: Secret | null =
-      await this.secretPersistenceService.updateSecret(targetUser.id, "USER", {
-        passHash,
-        salt,
-      });
-
-    if (!updatedUserSecret) {
-      throw new UserSecretCannotBeUpdatedError(targetUser.id);
-    }
-
-    // TODO: We need to terminate all other user's sessions except for this device
   }
 
   async updatePlatformUserUsername(
@@ -325,7 +399,51 @@ export class UserManagementController {
     await this.deleteUserSecret(deactivatedUser.id);
   }
 
+  // ======================================
+  //   PLATFORM USER AUTH/SESSION METHODS
+  // ======================================
+
   // TODO: Get all active sessions for user
+
+  private async createPlatformUserSession(
+    deviceId: string,
+    userId: string
+  ): Promise<Session> {
+    // TechDebt: The default value for this should be defined by platform config
+    const sessionExpiryDate: DateTime = DateTime.now().plus({ hours: 24 });
+
+    const newSession = await this.sessionPersistenceService.createSession({
+      id: await this.secretProcessingService.generateUniqueHashString(),
+      deviceId,
+      userId,
+      expiresAt: sessionExpiryDate.toJSDate(),
+    });
+
+    if (!newSession) {
+      throw new UserSessionCannotBeCreatedError(userId, deviceId);
+    }
+
+    return newSession;
+  }
+
+  async terminatePlatformUserSession(sessionId: string): Promise<void> {
+    const session: Session = await this.resolveSessionById(sessionId);
+
+    const deletedSession = await this.sessionPersistenceService.deleteSession(
+      session.id
+    );
+
+    // If session persistence operation is performed successfully (i.e. create, read, update, delete), a session instance will be returned
+    if (!deletedSession) {
+      throw new UserSessionCannotBeDeletedError(sessionId);
+    }
+
+    return;
+  }
+
+  // ======================================
+  //               RESOLVERS
+  // ======================================
 
   private async resolveSessionById(sessionId: string): Promise<Session> {
     // Verifying if session is actually expired (this is technically redundant)
@@ -428,107 +546,9 @@ export class UserManagementController {
     return userDevice;
   }
 
-  async getPlatformUser(
-    sessionId: string
-  ): Promise<Omit<UserDto, "id" | "isActive">> {
-    const currentUser: User = await this.resolvePlatformUserBySessionId(
-      sessionId
-    );
-
-    return mapUserDomainToDto(currentUser);
-  }
-
-  private async createPlatformUserSession(
-    deviceId: string,
-    userId: string
-  ): Promise<Session> {
-    // TechDebt: The default value for this should be defined by platform config
-    const sessionExpiryDate: DateTime = DateTime.now().plus({ hours: 24 });
-
-    const newSession = await this.sessionPersistenceService.createSession({
-      id: await this.secretProcessingService.generateUniqueHashString(),
-      deviceId,
-      userId,
-      expiresAt: sessionExpiryDate.toJSDate(),
-    });
-
-    if (!newSession) {
-      throw new UserSessionCannotBeCreatedError(userId, deviceId);
-    }
-
-    return newSession;
-  }
-
-  async signInPlatformUser(
-    email: string,
-    password: string,
-    userAgent: string,
-    ip: string
-  ): Promise<Session> {
-    const targetUser: User | null =
-      await this.userPersistenceService.getUserByEmail(email);
-
-    if (!targetUser) {
-      throw new InvalidUserCredentialsError();
-    }
-
-    if (!targetUser.isActive) {
-      throw new UserAccountDoesntExistAnymoreError();
-    }
-
-    const userDevice: Device = await this.resolvePlatformUserDevice(
-      userAgent,
-      ip,
-      targetUser.id
-    );
-
-    if (userDevice.sessionId) {
-      try {
-        // If session for this device exists and is active it will be returned
-        // If session exists but is expired it will be wiped and session resolver will throw
-        // If session doesn't exist session resolver will throw
-        return await this.resolveSessionById(userDevice.sessionId);
-      } catch (error: any) {
-        // We can just catch the error here without throwing, this behaviour is expected.
-        // If error logging is enabled, errors will be logged anyway.
-      }
-    }
-
-    const isMatchingPassword: boolean = await this.verifyPlatformUserSecret(
-      targetUser.id,
-      password
-    );
-
-    if (!isMatchingPassword) {
-      throw new InvalidUserCredentialsError();
-    }
-
-    return await this.createPlatformUserSession(userDevice.id, targetUser.id);
-  }
-
-  async terminatePlatformUserSession(sessionId: string): Promise<void> {
-    const session: Session = await this.resolveSessionById(sessionId);
-
-    const deletedSession = await this.sessionPersistenceService.deleteSession(
-      session.id
-    );
-
-    // If session persistence operation is performed successfully (i.e. create, read, update, delete), a session instance will be returned
-    if (!deletedSession) {
-      throw new UserSessionCannotBeDeletedError(sessionId);
-    }
-
-    return;
-  }
-
-  private async deleteUserSecret(userId: string): Promise<void> {
-    const deletedSecret: Secret | null =
-      await this.secretPersistenceService.deleteSecret(userId, "USER");
-
-    if (!deletedSecret) {
-      throw new UserSecretCannotBeDeletedError(userId);
-    }
-  }
+  // ======================================
+  //           APP USER METHODS
+  // ======================================
 
   // AppUser (aka UserProjection in AUP model) refers to a connection between PlatformUser and an Application
   // that can have additional app-specific data attached to it:
