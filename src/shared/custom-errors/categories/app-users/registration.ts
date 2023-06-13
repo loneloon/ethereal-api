@@ -11,3 +11,15 @@ export class AppUserCannotBeCreatedError extends CustomError {
     super({ appName, userId });
   }
 }
+
+export class AppUserAlreadyExistsError extends CustomError {
+  readonly httpCode: number = 400;
+  readonly platformCode: string = "E1121";
+  protected readonly internalOnly: boolean = false;
+  protected readonly messageTemplate: string =
+    "User '{userEmail}' is already connected to '{appName}' app!";
+
+  constructor(userEmail: string, appName: string) {
+    super({ userEmail, appName });
+  }
+}

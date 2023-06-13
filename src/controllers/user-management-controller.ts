@@ -44,9 +44,12 @@ import {
   UserSessionCannotBeDeletedError,
   UserSessionHasExpiredError,
   UserUsernameCannotBeUpdatedError,
+  AppUserCannotBeCreatedError,
+  AppUserAlreadyExistsError,
+  AppUserCannotBeDeactivatedError,
 } from "@shared/custom-errors";
 import { UserProjection } from "../aup/models/user-projection";
-import { AppUserCannotBeCreatedError } from "../shared/custom-errors/categories/app-users";
+import { Application } from "../aup/models/application";
 
 export class UserManagementController {
   constructor(
@@ -335,6 +338,7 @@ export class UserManagementController {
     }
 
     await this.deleteUserSecret(deactivatedUser.id);
+    await this.deleteAllUserProjections(deactivatedUser.id);
   }
 
   private async checkEmailAvailability(email: string): Promise<boolean> {
@@ -350,6 +354,47 @@ export class UserManagementController {
       return false;
     }
     return true;
+  }
+
+  private async deleteAllUserProjections(userId: string): Promise<void> {
+    const allUserProjections: UserProjection[] =
+      await this.userProjectionPersistenceService.getProjectionsByUserId(
+        userId
+      );
+    const allUserProjectionsAppIds = allUserProjections.map(
+      (projection) => projection.appId
+    );
+
+    const deletedProjections: (UserProjection | null)[] = await Promise.all(
+      allUserProjections.map(
+        async (projection): Promise<UserProjection | null> =>
+          this.userProjectionPersistenceService.deleteUserProjection(
+            projection.appId,
+            projection.userId
+          )
+      )
+    );
+    const deletedProjectionsAppIds: string[] = deletedProjections
+      .filter((projection) => projection !== null)
+      .map((projection) => projection!.appId);
+
+    const undeletedProjectionsAppIds: string[] =
+      allUserProjectionsAppIds.reduce((res: string[], appId: string) => {
+        if (!deletedProjectionsAppIds.includes(appId)) {
+          return [...res, appId];
+        }
+        return res;
+      }, []);
+
+    if (undeletedProjectionsAppIds) {
+      console.warn(
+        JSON.stringify({
+          message:
+            "Warning! Some of the user projections could not be deleted! Please remove them manually!",
+          undeletedProjectionsAppIds,
+        })
+      );
+    }
   }
 
   // ======================================
@@ -546,6 +591,17 @@ export class UserManagementController {
     return userDevice;
   }
 
+  private async resolveAppByName(appName: string): Promise<Application> {
+    const app: Application | null =
+      await this.appPersistenceService.getApplicationByName(appName);
+
+    if (!app) {
+      throw new AppDoesntExistError(appName);
+    }
+
+    return app;
+  }
+
   // ======================================
   //           APP USER METHODS
   // ======================================
@@ -558,32 +614,59 @@ export class UserManagementController {
     appName: string,
     alias: string
   ): Promise<void> {
-    // Check if app user already exists
+    const user: User = await this.resolvePlatformUserBySessionId(sessionId);
+    const app: Application = await this.resolveAppByName(appName);
 
-    const userId: string = (
-      await this.resolvePlatformUserBySessionId(sessionId)
-    ).id;
-    const appId: string | undefined = (
-      await this.appPersistenceService.getApplicationByName(appName)
-    )?.id;
-
-    if (!appId) {
-      throw new AppDoesntExistError(appName);
+    if (await this.checkIfAppUserExists(app.id, user.id)) {
+      throw new AppUserAlreadyExistsError(user.email, app.name);
     }
 
     const newAppUser: UserProjection | null =
       await this.userProjectionPersistenceService.createUserProjection({
-        userId,
-        appId,
+        userId: user.id,
+        appId: app.id,
         alias,
       });
 
     if (!newAppUser) {
-      throw new AppUserCannotBeCreatedError(appName, userId);
+      throw new AppUserCannotBeCreatedError(app.name, user.id);
     }
+  }
+
+  private async checkIfAppUserExists(
+    appId: string,
+    userId: string
+  ): Promise<boolean> {
+    const appUser: UserProjection | null =
+      await this.userProjectionPersistenceService.getProjectionByAppAndUserId(
+        appId,
+        userId
+      );
+
+    if (appUser) {
+      return true;
+    }
+
+    return false;
   }
 
   async editAppUser(sessionId: string) {}
 
-  async deactivateAppUser(sessionId: string) {}
+  async deactivateAppUser(sessionId: string, appName: string): Promise<void> {
+    const user: User = await this.resolvePlatformUserBySessionId(sessionId);
+    const app: Application = await this.resolveAppByName(appName);
+
+    const deactivatedAppUser: UserProjection | null =
+      await this.userProjectionPersistenceService.updateUserProjection(
+        app.id,
+        user.id,
+        {
+          isActive: false,
+        }
+      );
+
+    if (!deactivatedAppUser) {
+      throw new AppUserCannotBeDeactivatedError(app.id, user.id);
+    }
+  }
 }
