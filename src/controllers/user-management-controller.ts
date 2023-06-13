@@ -290,8 +290,41 @@ export class UserManagementController {
       sessionId
     );
 
+    await this.deleteAllUserSessions(targetUser.id);
+
+    const deactivatedUser = await this.userPersistenceService.updateUser(
+      targetUser.id,
+      {
+        isActive: false,
+      }
+    );
+
+    if (!deactivatedUser) {
+      throw new UserAccountCannotBeDeactivatedError(targetUser.id);
+    }
+
+    await this.deleteUserSecret(deactivatedUser.id);
+    await this.deleteAllUserProjections(deactivatedUser.id);
+  }
+
+  private async checkEmailAvailability(email: string): Promise<boolean> {
+    const user: User | null = await this.userPersistenceService.getUserByEmail(
+      email
+    );
+
+    if (user && user.isActive) {
+      return false;
+    } else if (user && !user.isActive) {
+      // TODO: There is a complicated edge-case where we need to account for
+      // returning users that previously "deleted" their accounts, but in our logic we deactivate them instead of deleting
+      return false;
+    }
+    return true;
+  }
+
+  private async deleteAllUserSessions(userId: string): Promise<void> {
     const allUserSessions: Session[] =
-      await this.sessionPersistenceService.getSessionsByUserId(targetUser.id);
+      await this.sessionPersistenceService.getSessionsByUserId(userId);
     const allUserSessionIds: string[] = allUserSessions.map(
       (session) => session.id
     );
@@ -325,35 +358,6 @@ export class UserManagementController {
         })
       );
     }
-
-    const deactivatedUser = await this.userPersistenceService.updateUser(
-      targetUser.id,
-      {
-        isActive: false,
-      }
-    );
-
-    if (!deactivatedUser) {
-      throw new UserAccountCannotBeDeactivatedError(targetUser.id);
-    }
-
-    await this.deleteUserSecret(deactivatedUser.id);
-    await this.deleteAllUserProjections(deactivatedUser.id);
-  }
-
-  private async checkEmailAvailability(email: string): Promise<boolean> {
-    const user: User | null = await this.userPersistenceService.getUserByEmail(
-      email
-    );
-
-    if (user && user.isActive) {
-      return false;
-    } else if (user && !user.isActive) {
-      // TODO: There is a complicated edge-case where we need to account for
-      // returning users that previously "deleted" their accounts, but in our logic we deactivate them instead of deleting
-      return false;
-    }
-    return true;
   }
 
   private async deleteAllUserProjections(userId: string): Promise<void> {
