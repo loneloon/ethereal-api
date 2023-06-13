@@ -5,10 +5,10 @@ export class AppUserCannotBeCreatedError extends CustomError {
   readonly platformCode: string = "E1120.1";
   protected readonly internalOnly: boolean = true;
   protected readonly messageTemplate: string =
-    "Couldn't create '{appName}' app user record!";
+    "Couldn't create app user record!";
 
-  constructor(appName: string, userId: string) {
-    super({ appName, userId });
+  constructor(appId: string, userId: string) {
+    super({ appId, userId });
   }
 }
 

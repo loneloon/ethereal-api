@@ -458,7 +458,7 @@ export const followApp = async (
       await resolveAuthContext(context, userManagementController)
     ).sessionId;
 
-    await userManagementController.createAppUser(
+    await userManagementController.followApp(
       sessionId,
       body.appName,
       body.alias
@@ -488,7 +488,7 @@ export const unfollowApp = async (
       await resolveAuthContext(context, userManagementController)
     ).sessionId;
 
-    await userManagementController.deactivateAppUser(sessionId, body.appName);
+    await userManagementController.unfollowApp(sessionId, body.appName);
     context.res
       .status(200)
       .json({ message: `User has unfollowed '${body.appName}' app!` });

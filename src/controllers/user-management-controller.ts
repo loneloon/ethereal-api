@@ -47,6 +47,8 @@ import {
   AppUserCannotBeCreatedError,
   AppUserAlreadyExistsError,
   AppUserCannotBeDeactivatedError,
+  AppUserCannotBeReactivatedError,
+  AppUserDoesntExistError,
 } from "@shared/custom-errors";
 import { UserProjection } from "../aup/models/user-projection";
 import { Application } from "../aup/models/application";
@@ -401,6 +403,45 @@ export class UserManagementController {
     }
   }
 
+  async followApp(sessionId: string, appName: string, alias: string) {
+    const user: User = await this.resolvePlatformUserBySessionId(sessionId);
+    const app: Application = await this.resolveAppByName(appName);
+
+    // Checking if the app user already exists
+    const appUser: UserProjection | null =
+      await this.userProjectionPersistenceService.getProjectionByAppAndUserId(
+        app.id,
+        user.id
+      );
+
+    if (appUser) {
+      if (appUser.isActive) {
+        throw new AppUserAlreadyExistsError(user.email, app.name);
+      }
+
+      await this.reactivateAppUser(appUser.appId, appUser.userId);
+    } else {
+      await this.createAppUser(app.id, user.id, alias);
+    }
+  }
+
+  async unfollowApp(sessionId: string, appName: string): Promise<void> {
+    const user: User = await this.resolvePlatformUserBySessionId(sessionId);
+    const app: Application = await this.resolveAppByName(appName);
+
+    const appUser: UserProjection | null =
+      await this.userProjectionPersistenceService.getProjectionByAppAndUserId(
+        app.id,
+        user.id
+      );
+
+    if (!appUser || !appUser.isActive) {
+      throw new AppUserDoesntExistError(app.id, user.id);
+    }
+
+    await this.deactivateAppUser(app.id, user.id);
+  }
+
   // ======================================
   //   PLATFORM USER AUTH/SESSION METHODS
   // ======================================
@@ -613,64 +654,58 @@ export class UserManagementController {
   // AppUser (aka UserProjection in AUP model) refers to a connection between PlatformUser and an Application
   // that can have additional app-specific data attached to it:
   // i.e. alias, settings, roles, etc.
-  async createAppUser(
-    sessionId: string,
-    appName: string,
+  private async createAppUser(
+    appId: string,
+    userId: string,
     alias: string
   ): Promise<void> {
-    const user: User = await this.resolvePlatformUserBySessionId(sessionId);
-    const app: Application = await this.resolveAppByName(appName);
-
-    if (await this.checkIfAppUserExists(app.id, user.id)) {
-      throw new AppUserAlreadyExistsError(user.email, app.name);
-    }
-
     const newAppUser: UserProjection | null =
       await this.userProjectionPersistenceService.createUserProjection({
-        userId: user.id,
-        appId: app.id,
+        userId,
+        appId,
         alias,
       });
 
     if (!newAppUser) {
-      throw new AppUserCannotBeCreatedError(app.name, user.id);
+      throw new AppUserCannotBeCreatedError(appId, userId);
     }
-  }
-
-  private async checkIfAppUserExists(
-    appId: string,
-    userId: string
-  ): Promise<boolean> {
-    const appUser: UserProjection | null =
-      await this.userProjectionPersistenceService.getProjectionByAppAndUserId(
-        appId,
-        userId
-      );
-
-    if (appUser) {
-      return true;
-    }
-
-    return false;
   }
 
   async editAppUser(sessionId: string) {}
 
-  async deactivateAppUser(sessionId: string, appName: string): Promise<void> {
-    const user: User = await this.resolvePlatformUserBySessionId(sessionId);
-    const app: Application = await this.resolveAppByName(appName);
-
+  private async deactivateAppUser(
+    appId: string,
+    userId: string
+  ): Promise<void> {
     const deactivatedAppUser: UserProjection | null =
       await this.userProjectionPersistenceService.updateUserProjection(
-        app.id,
-        user.id,
+        appId,
+        userId,
         {
           isActive: false,
         }
       );
 
     if (!deactivatedAppUser) {
-      throw new AppUserCannotBeDeactivatedError(app.id, user.id);
+      throw new AppUserCannotBeDeactivatedError(appId, userId);
+    }
+  }
+
+  private async reactivateAppUser(
+    appId: string,
+    userId: string
+  ): Promise<void> {
+    const reactivatedUser: UserProjection | null =
+      await this.userProjectionPersistenceService.updateUserProjection(
+        appId,
+        userId,
+        {
+          isActive: true,
+        }
+      );
+
+    if (!reactivatedUser) {
+      throw new AppUserCannotBeReactivatedError(appId, userId);
     }
   }
 }
