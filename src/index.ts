@@ -32,15 +32,6 @@ import { Espeon } from "espeon";
 import { AppManagementController } from "./controllers/app-management-controller";
 
 async function main(): Promise<void> {
-  // THIS IS A TEMPORARY SETUP FOR TESTING CONTROLLERS ON THE FLY
-  //
-  // TODO:
-  //    - UNIT TESTS FOR SERVICES AND CONTROLLERS
-  //    - DOMAIN TO DTO MAPPERS FOR AUP AND SSD (In progress...)
-  //    - APP USER FLOW FOR USER MANAGEMENT CONTROLLER
-  //    - APP MANAGEMENT CONTROLLER
-  //    - ROLES AND PERMISSIONS
-  //    - CONSIDER USING DECORATORS TO RESOLVE SESSION AND USER STATE ON OPERATION BASIS (ALSO APPLICABLE FOR PERMISSION CHECKS)
   const config = (() => {
     const deploymentTheme = process.env.DEPLOYMENT_THEME;
 
@@ -114,9 +105,9 @@ async function main(): Promise<void> {
     res.send(`Ethereal API v${process.env.API_VERSION}`);
   });
 
-  //
-  // USER REQUESTS
-  //
+  // ====================
+  //    USER REQUESTS
+  // ====================
   app.post("/user/sign-up", (req, res) =>
     signUpUser({ req, res }, userManagementController)
   );
@@ -153,9 +144,9 @@ async function main(): Promise<void> {
     joinApp({ req, res }, userManagementController)
   );
 
-  //
-  // APP REQUESTS
-  //
+  // ====================
+  //     APP REQUESTS
+  // ====================
   app.post("/app/register", (req, res) =>
     registerApp({ req, res }, appManagementController)
   );
