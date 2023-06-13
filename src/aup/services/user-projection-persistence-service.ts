@@ -34,7 +34,7 @@ export class UserProjectionPersistenceService extends PrismaBasedPersistenceServ
   protected readonly modelAccessor: Prisma.UserProjectionDelegate<
     Prisma.RejectOnNotFound | Prisma.RejectPerOperation | undefined
   >;
-  protected readonly isPrimaryKeyComposite: boolean = true;
+  protected readonly isPrimaryKeyComposite: boolean = false;
 
   constructor(readonly prismaClient: PrismaAupClient) {
     super();
@@ -87,6 +87,14 @@ export class UserProjectionPersistenceService extends PrismaBasedPersistenceServ
   ): Promise<UserProjection | null> {
     const userProjectionDto: UserProjectionDto | null =
       await this.getUniqueEntity("appId_userId", { appId, userId });
+    return userProjectionDto
+      ? mapUserProjectionDtoToDomain(userProjectionDto)
+      : null;
+  }
+
+  async getProjectionById(id: string): Promise<UserProjection | null> {
+    const userProjectionDto: UserProjectionDto | null =
+      await this.getUniqueEntity("id", id);
     return userProjectionDto
       ? mapUserProjectionDtoToDomain(userProjectionDto)
       : null;

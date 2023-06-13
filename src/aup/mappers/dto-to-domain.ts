@@ -30,6 +30,7 @@ export function mapUserProjectionDtoToDomain(
   userProjectionDto: UserProjectionDto
 ): UserProjection {
   return new UserProjection(
+    userProjectionDto.id,
     userProjectionDto.userId,
     userProjectionDto.appId,
     userProjectionDto.isActive,

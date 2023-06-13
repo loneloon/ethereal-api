@@ -2,6 +2,7 @@ import { Metadata } from "@shared/models/common";
 
 export class UserProjection {
   constructor(
+    readonly id: string,
     readonly userId: string,
     readonly appId: string,
     readonly isActive: boolean,

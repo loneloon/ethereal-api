@@ -25,6 +25,7 @@ model User {
 }
 
 model UserProjection {
+  id                String            @id @default(uuid())
   app               Application       @relation(fields: [appId], references: [id])
   appId             String
   user              User              @relation(fields: [userId], references: [id])
@@ -35,7 +36,7 @@ model UserProjection {
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
-  @@id(fields: [appId, userId])
+  @@unique(fields: [appId, userId])
 }
 
 model Application {
