@@ -465,7 +465,7 @@ export const followApp = async (
     );
     context.res
       .status(200)
-      .json({ message: `User is now following '${body.appName}' app!` });
+      .json({ message: `User is now following the '${body.appName}' app!` });
     return;
   } catch (error: any) {
     context.res.status(error.httpCode).json(error.dto);
@@ -491,7 +491,7 @@ export const unfollowApp = async (
     await userManagementController.unfollowApp(sessionId, body.appName);
     context.res
       .status(200)
-      .json({ message: `User has unfollowed '${body.appName}' app!` });
+      .json({ message: `User has unfollowed the '${body.appName}' app!` });
     return;
   } catch (error: any) {
     context.res.status(error.httpCode).json(error.dto);

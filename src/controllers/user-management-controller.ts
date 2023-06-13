@@ -436,7 +436,7 @@ export class UserManagementController {
       );
 
     if (!appUser || !appUser.isActive) {
-      throw new AppUserDoesntExistError(app.id, user.id);
+      throw new AppUserDoesntExistError(app.name, user.email);
     }
 
     await this.deactivateAppUser(app.id, user.id);

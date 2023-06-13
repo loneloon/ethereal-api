@@ -17,7 +17,7 @@ export class AppUserAlreadyExistsError extends CustomError {
   readonly platformCode: string = "E1121";
   protected readonly internalOnly: boolean = false;
   protected readonly messageTemplate: string =
-    "User '{userEmail}' is already connected to '{appName}' app!";
+    "User '{userEmail}' is already following the '{appName}' app!";
 
   constructor(userEmail: string, appName: string) {
     super({ userEmail, appName });
