@@ -25,7 +25,8 @@ import {
   updateAppUrl,
   getApp,
   getAppUsers,
-  joinApp,
+  unfollowApp,
+  followApp,
 } from "./handlers";
 import { SecretProcessingService } from "./ssd/services/secret-processing-service";
 import { Espeon } from "espeon";
@@ -140,8 +141,12 @@ async function main(): Promise<void> {
     updateUserName({ req, res }, userManagementController)
   );
 
-  app.post("/user/join-app", (req, res) =>
-    joinApp({ req, res }, userManagementController)
+  app.post("/user/follow-app", (req, res) =>
+    followApp({ req, res }, userManagementController)
+  );
+
+  app.post("/user/unfollow-app", (req, res) =>
+    unfollowApp({ req, res }, userManagementController)
   );
 
   // ====================

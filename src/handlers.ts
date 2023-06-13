@@ -443,7 +443,7 @@ export const getAppUsers = async (
   }
 };
 
-export const joinApp = async (
+export const followApp = async (
   context: { req: Request; res: Response },
   userManagementController: UserManagementController
 ): Promise<void> => {
@@ -465,7 +465,33 @@ export const joinApp = async (
     );
     context.res
       .status(200)
-      .json({ message: `User has successfully joined '${body.appName}' app!` });
+      .json({ message: `User is now following '${body.appName}' app!` });
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
+export const unfollowApp = async (
+  context: { req: Request; res: Response },
+  userManagementController: UserManagementController
+): Promise<void> => {
+  const body = context.req.body;
+
+  try {
+    if (!body.appName || !body.alias) {
+      throw new MissingArgumentsError(["appName", "alias"]);
+    }
+
+    const sessionId = (
+      await resolveAuthContext(context, userManagementController)
+    ).sessionId;
+
+    await userManagementController.deactivateAppUser(sessionId, body.appName);
+    context.res
+      .status(200)
+      .json({ message: `User has unfollowed '${body.appName}' app!` });
     return;
   } catch (error: any) {
     context.res.status(error.httpCode).json(error.dto);
