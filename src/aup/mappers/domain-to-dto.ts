@@ -49,6 +49,7 @@ export function mapUserProjectionDomainToAppUserDto(
   userProjection: UserProjection
 ): AppUserDto {
   return {
+    id: userProjection.id,
     alias: userProjection.alias,
     createdAt: userProjection.metadata.creationTimestamp.toJSDate(),
     updatedAt: userProjection.metadata.updatedTimestamp.toJSDate(),
