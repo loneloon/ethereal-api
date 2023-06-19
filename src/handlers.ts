@@ -526,6 +526,65 @@ export const getAppUser = async (
   }
 };
 
+export const proxySignInUser = async (
+  context: { req: Request; res: Response },
+  userManagementController: UserManagementController,
+  appManagementController: AppManagementController
+): Promise<void> => {
+  const body = context.req.body;
+
+  try {
+    if (
+      !body.email ||
+      !body.password ||
+      !body.accessKeyId ||
+      !body.secretAccessKey ||
+      !body.userAgent ||
+      !body.userIp
+    ) {
+      throw new MissingArgumentsError([
+        "email",
+        "password",
+        "accessKeyId",
+        "secretAccessKey",
+        "userAgent",
+        "userIp",
+      ]);
+    }
+
+    const appDto = await appManagementController.getApp(
+      body.accessKeyId,
+      body.secretAccessKey
+    );
+
+    const userSession = await userManagementController.signInPlatformUser(
+      body.email,
+      body.password,
+      body.userAgent,
+      body.userIp
+    );
+
+    const sessionCookie =
+      userManagementController.secretProcessingService.generateSessionCookie(
+        userSession.id,
+        userSession.expiresAt
+      );
+
+    context.res
+      .cookie(sessionCookie.name, sessionCookie.data, {
+        expires: sessionCookie.expiresAt,
+        httpOnly: true,
+        domain: appDto.url,
+      })
+      .status(200)
+      .json({ message: "Proxy user authentication successful!" });
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
 async function resolveAuthContext(
   context: { req: Request; res: Response },
   userManagementController: UserManagementController
