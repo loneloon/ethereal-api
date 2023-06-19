@@ -27,6 +27,7 @@ import {
   getAppUsers,
   unfollowApp,
   followApp,
+  getAppUser,
 } from "./handlers";
 import { SecretProcessingService } from "./ssd/services/secret-processing-service";
 import { Espeon } from "espeon";
@@ -147,6 +148,10 @@ async function main(): Promise<void> {
 
   app.post("/user/unfollow-app", (req, res) =>
     unfollowApp({ req, res }, userManagementController)
+  );
+
+  app.get("/user/app/profile", (req, res) =>
+    getAppUser({ req, res }, userManagementController)
   );
 
   // ====================

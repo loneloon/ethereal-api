@@ -499,6 +499,33 @@ export const unfollowApp = async (
   }
 };
 
+export const getAppUser = async (
+  context: { req: Request; res: Response },
+  userManagementController: UserManagementController
+): Promise<void> => {
+  const params = context.req.query as any;
+
+  try {
+    if (!params.appName) {
+      throw new MissingArgumentsError(["appName"]);
+    }
+
+    const sessionId = (
+      await resolveAuthContext(context, userManagementController)
+    ).sessionId;
+
+    const appUserDto = await userManagementController.getAppUser(
+      sessionId,
+      params.appName
+    );
+    context.res.status(200).json(appUserDto);
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
 async function resolveAuthContext(
   context: { req: Request; res: Response },
   userManagementController: UserManagementController

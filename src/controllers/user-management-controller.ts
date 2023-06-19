@@ -20,7 +20,10 @@ import {
   validatePasswordString,
   validateUsernameString,
 } from "@shared/validators";
-import { mapUserDomainToDto } from "../aup/mappers/domain-to-dto";
+import {
+  mapUserDomainToDto,
+  mapUserProjectionDomainToAppUserDto,
+} from "../aup/mappers/domain-to-dto";
 import {
   AppDoesntExistError,
   ExpiredUserSessionCannotBeDeletedError,
@@ -52,6 +55,7 @@ import {
 } from "@shared/custom-errors";
 import { UserProjection } from "../aup/models/user-projection";
 import { Application } from "../aup/models/application";
+import { AppUserDto } from "../aup/dtos/user-projection";
 
 export class UserManagementController {
   constructor(
@@ -707,5 +711,25 @@ export class UserManagementController {
     if (!reactivatedUser) {
       throw new AppUserCannotBeReactivatedError(appId, userId);
     }
+  }
+
+  public async getAppUser(
+    sessionId: string,
+    appName: string
+  ): Promise<AppUserDto> {
+    const user: User = await this.resolvePlatformUserBySessionId(sessionId);
+    const app: Application = await this.resolveAppByName(appName);
+
+    const appUser: UserProjection | null =
+      await this.userProjectionPersistenceService.getProjectionByAppAndUserId(
+        app.id,
+        user.id
+      );
+
+    if (!appUser || !appUser.isActive) {
+      throw new AppUserDoesntExistError(app.name, user.email);
+    }
+
+    return mapUserProjectionDomainToAppUserDto(appUser);
   }
 }
