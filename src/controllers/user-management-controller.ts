@@ -21,6 +21,7 @@ import {
   validateUsernameString,
 } from "@shared/validators";
 import {
+  mapApplicationDomainToPublicApplicationViewDto,
   mapUserDomainToDto,
   mapUserProjectionDomainToAppUserDto,
 } from "../aup/mappers/domain-to-dto";
@@ -56,6 +57,8 @@ import {
 import { UserProjection } from "../aup/models/user-projection";
 import { Application } from "../aup/models/application";
 import { AppUserDto } from "../aup/dtos/user-projection";
+import { SessionCookieDto } from "../ssd/dtos/authentication";
+import { PublicApplicationViewDto } from "../aup/dtos/application";
 
 export class UserManagementController {
   constructor(
@@ -535,6 +538,15 @@ export class UserManagementController {
     return;
   }
 
+  async issueSessionCookie(sessionId: string): Promise<SessionCookieDto> {
+    const session: Session = await this.resolveSessionById(sessionId);
+
+    return this.secretProcessingService.generateSessionCookie(
+      session.id,
+      session.expiresAt
+    );
+  }
+
   // ======================================
   //               RESOLVERS
   // ======================================
@@ -731,5 +743,13 @@ export class UserManagementController {
     }
 
     return mapUserProjectionDomainToAppUserDto(appUser);
+  }
+
+  public async getAppUrl(sessionId: string, appName: string): Promise<string> {
+    // We don't need the app user, but this call will act as a validator, it will throw if platform user is not following the target app
+    const appUser = await this.getAppUser(sessionId, appName);
+    const app = await this.resolveAppByName(appName);
+
+    return app.url;
   }
 }

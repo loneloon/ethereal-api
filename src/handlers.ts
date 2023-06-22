@@ -50,11 +50,9 @@ export const signInUser = async (
       ip
     );
 
-    const sessionCookie =
-      userManagementController.secretProcessingService.generateSessionCookie(
-        userSession.id,
-        userSession.expiresAt
-      );
+    const sessionCookie = await userManagementController.issueSessionCookie(
+      userSession.id
+    );
 
     context.res
       .cookie(sessionCookie.name, sessionCookie.data, {
@@ -571,6 +569,44 @@ export const proxySignInUser = async (
       );
 
     context.res.status(200).json(userSessionCookie);
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
+export const authenticateAppUser = async (
+  context: { req: Request; res: Response },
+  userManagementController: UserManagementController
+): Promise<void> => {
+  const body = context.req.body;
+
+  try {
+    if (!body.appName) {
+      throw new MissingArgumentsError(["appName"]);
+    }
+
+    const sessionId = (
+      await resolveAuthContext(context, userManagementController)
+    ).sessionId;
+
+    const appUrl = await userManagementController.getAppUrl(
+      sessionId,
+      body.appName
+    );
+    const sessionCookie = await userManagementController.issueSessionCookie(
+      sessionId
+    );
+
+    context.res.redirect(
+      appUrl +
+        `/sign-in/ethereal?blessing=${encodeURIComponent(
+          sessionCookie.data
+        )}&expires=${encodeURIComponent(
+          Math.floor(sessionCookie.expiresAt.getTime() / 1000)
+        )}`
+    );
     return;
   } catch (error: any) {
     context.res.status(error.httpCode).json(error.dto);
