@@ -564,20 +564,13 @@ export const proxySignInUser = async (
       body.userIp
     );
 
-    const sessionCookie =
+    const userSessionCookie =
       userManagementController.secretProcessingService.generateSessionCookie(
         userSession.id,
         userSession.expiresAt
       );
 
-    context.res
-      .cookie(sessionCookie.name, sessionCookie.data, {
-        expires: sessionCookie.expiresAt,
-        httpOnly: true,
-        domain: appDto.url,
-      })
-      .status(200)
-      .json({ message: "Proxy user authentication successful!" });
+    context.res.status(200).json(userSessionCookie);
     return;
   } catch (error: any) {
     context.res.status(error.httpCode).json(error.dto);
