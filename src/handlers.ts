@@ -69,6 +69,26 @@ export const signInUser = async (
   }
 };
 
+export const getUserSessionStatus = async (
+  context: { req: Request; res: Response },
+  userManagementController: UserManagementController
+): Promise<void> => {
+  try {
+    const sessionId = (
+      await resolveAuthContext(context, userManagementController)
+    ).sessionId;
+
+    const sessionStatus =
+      await userManagementController.getPlatformUserSessionStatus(sessionId);
+
+    context.res.status(200).json(sessionStatus);
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
 export const signOutUser = async (
   context: { req: Request; res: Response },
   userManagementController: UserManagementController

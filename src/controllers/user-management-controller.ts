@@ -57,7 +57,7 @@ import {
 import { UserProjection } from "../aup/models/user-projection";
 import { Application } from "../aup/models/application";
 import { AppUserDto } from "../aup/dtos/user-projection";
-import { SessionCookieDto } from "../ssd/dtos/authentication";
+import { SessionCookieDto, SessionStatus } from "../ssd/dtos/authentication";
 import { PublicApplicationViewDto } from "../aup/dtos/application";
 
 export class UserManagementController {
@@ -521,6 +521,21 @@ export class UserManagementController {
     }
 
     return await this.createPlatformUserSession(userDevice.id, targetUser.id);
+  }
+
+  async getPlatformUserSessionStatus(
+    sessionId: string
+  ): Promise<SessionStatus> {
+    let session: Session | null = null;
+    try {
+      session = await this.resolveSessionById(sessionId);
+    } catch (error: any) {
+      console.warn(error.dto);
+    }
+
+    return {
+      isSessionAlive: session ? true : false,
+    };
   }
 
   async terminatePlatformUserSession(sessionId: string): Promise<void> {

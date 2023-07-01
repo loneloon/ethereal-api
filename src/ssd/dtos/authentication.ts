@@ -5,6 +5,10 @@ export interface SessionCookieDto {
   domain?: string;
 }
 
+export interface SessionStatus {
+  isSessionAlive: boolean;
+}
+
 export interface ApplicationKeysDto {
   accessKeyId: string;
   secretAccessKey: string;

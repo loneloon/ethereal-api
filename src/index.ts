@@ -29,6 +29,7 @@ import {
   followApp,
   getAppUser,
   proxySignInUser,
+  getUserSessionStatus,
 } from "./handlers";
 import { SecretProcessingService } from "./ssd/services/secret-processing-service";
 import { Espeon } from "espeon";
@@ -117,6 +118,10 @@ async function main(): Promise<void> {
 
   app.post("/user/sign-in", (req, res) =>
     signInUser({ req, res }, userManagementController)
+  );
+
+  app.get("/user/session", (req, res) =>
+    getUserSessionStatus({ req, res }, userManagementController)
   );
 
   app.post("/user/sign-out", (req, res) =>
