@@ -30,6 +30,8 @@ import {
   getAppUser,
   proxySignInUser,
   getUserSessionStatus,
+  getUserFollowedApps,
+  getAppsForUser,
 } from "./handlers";
 import { SecretProcessingService } from "./ssd/services/secret-processing-service";
 import { Espeon } from "espeon";
@@ -158,6 +160,14 @@ async function main(): Promise<void> {
 
   app.get("/user/app/profile", (req, res) =>
     getAppUser({ req, res }, userManagementController)
+  );
+
+  app.get("/user/apps", (req, res) =>
+    getAppsForUser({ req, res }, userManagementController)
+  );
+
+  app.get("/user/apps/followed", (req, res) =>
+    getUserFollowedApps({ req, res }, userManagementController)
   );
 
   // ====================

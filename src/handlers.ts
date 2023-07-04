@@ -634,6 +634,46 @@ export const authenticateAppUser = async (
   }
 };
 
+export const getUserFollowedApps = async (
+  context: { req: Request; res: Response },
+  userManagementController: UserManagementController
+): Promise<void> => {
+  try {
+    const sessionId = (
+      await resolveAuthContext(context, userManagementController)
+    ).sessionId;
+
+    const followedApps = await userManagementController.getUserFollowedApps(
+      sessionId
+    );
+    context.res.status(200).json({ followedApps });
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
+export const getAppsForUser = async (
+  context: { req: Request; res: Response },
+  userManagementController: UserManagementController
+): Promise<void> => {
+  try {
+    const sessionId = (
+      await resolveAuthContext(context, userManagementController)
+    ).sessionId;
+
+    const appsForUser = await userManagementController.getAppsForUser(
+      sessionId
+    );
+    context.res.status(200).json({ apps: appsForUser });
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
 async function resolveAuthContext(
   context: { req: Request; res: Response },
   userManagementController: UserManagementController

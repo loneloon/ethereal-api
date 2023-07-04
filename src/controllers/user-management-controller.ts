@@ -58,7 +58,10 @@ import { UserProjection } from "../aup/models/user-projection";
 import { Application } from "../aup/models/application";
 import { AppUserDto } from "../aup/dtos/user-projection";
 import { SessionCookieDto, SessionStatus } from "../ssd/dtos/authentication";
-import { PublicApplicationViewDto } from "../aup/dtos/application";
+import {
+  PublicApplicationViewDto,
+  UserRelatedApplicationViewDto,
+} from "../aup/dtos/application";
 
 export class UserManagementController {
   constructor(
@@ -766,5 +769,65 @@ export class UserManagementController {
     const app = await this.resolveAppByName(appName);
 
     return app.url;
+  }
+
+  public async getUserFollowedApps(
+    sessionId: string
+  ): Promise<PublicApplicationViewDto[]> {
+    const user = await this.resolvePlatformUserBySessionId(sessionId);
+
+    const userProjections: UserProjection[] =
+      await this.userProjectionPersistenceService.getProjectionsByUserId(
+        user.id
+      );
+    const followedApps: Application[] = (
+      await Promise.all(
+        userProjections.map(
+          async (projection) =>
+            await this.appPersistenceService.getApplicationById(
+              projection.appId
+            )
+        )
+      )
+    ).reduce((result: Application[], curr: Application | null) => {
+      if (curr) {
+        return [...result, curr];
+      }
+
+      return result;
+    }, []);
+
+    return followedApps.map((app) =>
+      mapApplicationDomainToPublicApplicationViewDto(app)
+    );
+  }
+
+  // Suggestion: This method can be upgraded by adding a sorting/filtering algorithm
+  // based on current user's settings (i.e remove apps that they marked as unrelated or move them to the end of the list, etc.),
+  // basically providing a filtered selection of apps tailored specifically for this user
+  public async getAppsForUser(
+    sessionId: string
+  ): Promise<UserRelatedApplicationViewDto[]> {
+    const user = await this.resolvePlatformUserBySessionId(sessionId);
+
+    const allApps: Application[] =
+      await this.appPersistenceService.getAllApplications();
+    const allAppsWithUserFollowingFlag: UserRelatedApplicationViewDto[] =
+      await Promise.all(
+        allApps.map(async (app) => {
+          const userProjection: UserProjection | null =
+            await this.userProjectionPersistenceService.getProjectionByAppAndUserId(
+              app.id,
+              user.id
+            );
+
+          return {
+            ...mapApplicationDomainToPublicApplicationViewDto(app),
+            isFollowing: userProjection ? true : false,
+          };
+        })
+      );
+
+    return allAppsWithUserFollowingFlag;
   }
 }
