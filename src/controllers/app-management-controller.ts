@@ -21,6 +21,8 @@ import {
   AppSecretCannotBeUpdatedError,
   AppNameIsNotAvailableError,
   AppSecretCannotBeDeletedError,
+  AppDoesntExistAnymoreError,
+  AppDoesntExistError,
 } from "../shared/custom-errors";
 import { ApplicationKeysDto } from "../ssd/dtos/authentication";
 import {
@@ -291,6 +293,21 @@ export class AppManagementController {
     );
   }
 
+  private async resolveAppByName(appName: string): Promise<Application> {
+    const app: Application | null =
+      await this.appPersistenceService.getApplicationByName(appName);
+
+    if (!app) {
+      throw new AppDoesntExistError(appName);
+    }
+
+    if (!app.isActive) {
+      throw new AppDoesntExistAnymoreError(app.id);
+    }
+
+    return app;
+  }
+
   public async updateAppName(
     accessKeyId: string,
     secretAccessKey: string,
@@ -363,7 +380,13 @@ export class AppManagementController {
     }
   }
 
-  public async getApp(
+  public async getApp(appName: string): Promise<PublicApplicationViewDto> {
+    const app: Application = await this.resolveAppByName(appName);
+
+    return mapApplicationDomainToPublicApplicationViewDto(app);
+  }
+
+  public async getAppAccount(
     accessKeyId: string,
     secretAccessKey: string
   ): Promise<Omit<ApplicationDto, "id" | "isActive">> {

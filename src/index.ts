@@ -32,6 +32,7 @@ import {
   getUserSessionStatus,
   getUserFollowedApps,
   getAppsForUser,
+  getAppAccount,
 } from "./handlers";
 import { SecretProcessingService } from "./ssd/services/secret-processing-service";
 import { Espeon } from "espeon";
@@ -194,6 +195,10 @@ async function main(): Promise<void> {
   );
 
   app.get("/app", (req, res) => getApp({ req, res }, appManagementController));
+
+  app.get("/app/account", (req, res) =>
+    getAppAccount({ req, res }, appManagementController)
+  );
 
   app.get("/apps", (req, res) =>
     getAllApps({ req, res }, appManagementController)

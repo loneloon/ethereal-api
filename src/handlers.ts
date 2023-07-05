@@ -420,11 +420,32 @@ export const getApp = async (
   const params = context.req.query as any;
 
   try {
+    if (!params.appName) {
+      throw new MissingArgumentsError(["appName"]);
+    }
+
+    const appDto = await appManagementController.getApp(params.appName);
+
+    context.res.status(200).json(appDto);
+    return;
+  } catch (error: any) {
+    context.res.status(error.httpCode).json(error.dto);
+    return;
+  }
+};
+
+export const getAppAccount = async (
+  context: { req: Request; res: Response },
+  appManagementController: AppManagementController
+): Promise<void> => {
+  const params = context.req.query as any;
+
+  try {
     if (!params.accessKeyId || !params.secretAccessKey) {
       throw new MissingArgumentsError(["accessKeyId", "secretAccessKey"]);
     }
 
-    const appDto = await appManagementController.getApp(
+    const appDto = await appManagementController.getAppAccount(
       params.accessKeyId,
       params.secretAccessKey
     );
@@ -570,7 +591,7 @@ export const proxySignInUser = async (
       ]);
     }
 
-    const appDto = await appManagementController.getApp(
+    const appDto = await appManagementController.getAppAccount(
       body.accessKeyId,
       body.secretAccessKey
     );
