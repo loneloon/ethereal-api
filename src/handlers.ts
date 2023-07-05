@@ -621,10 +621,10 @@ export const authenticateAppUser = async (
   context: { req: Request; res: Response },
   userManagementController: UserManagementController
 ): Promise<void> => {
-  const body = context.req.body;
+  const params = context.req.query as any;
 
   try {
-    if (!body.appName) {
+    if (!params.appName) {
       throw new MissingArgumentsError(["appName"]);
     }
 
@@ -634,7 +634,7 @@ export const authenticateAppUser = async (
 
     const appUrl = await userManagementController.getAppUrl(
       sessionId,
-      body.appName
+      params.appName
     );
     const sessionCookie = await userManagementController.issueSessionCookie(
       sessionId
