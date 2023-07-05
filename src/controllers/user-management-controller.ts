@@ -776,13 +776,14 @@ export class UserManagementController {
   ): Promise<PublicApplicationViewDto[]> {
     const user = await this.resolvePlatformUserBySessionId(sessionId);
 
-    const userProjections: UserProjection[] =
+    const activeUserProjections: UserProjection[] = (
       await this.userProjectionPersistenceService.getProjectionsByUserId(
         user.id
-      );
+      )
+    ).filter((projection) => projection.isActive);
     const followedApps: Application[] = (
       await Promise.all(
-        userProjections.map(
+        activeUserProjections.map(
           async (projection) =>
             await this.appPersistenceService.getApplicationById(
               projection.appId
