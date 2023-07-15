@@ -99,7 +99,7 @@ export const signOutUser = async (
       await resolveAuthContext(context, userManagementController)
     ).sessionId;
 
-    await userManagementController.signOutUser(sessionId);
+    await userManagementController.signOutPlatformUser(sessionId);
   } catch (error: any) {
     context.res.status(error.httpCode).json(error.dto);
     return;

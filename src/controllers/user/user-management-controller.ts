@@ -99,13 +99,30 @@ export class UserManagementController {
     );
   }
 
-  // ======================================
-  //      PLATFORM USER SECRET METHODS
-  // ======================================
+  async getPlatformUser(
+    sessionId: string
+  ): Promise<Omit<UserDto, "id" | "isActive">> {
+    const currentUser: User = await this.resolvePlatformUserBySessionId(
+      sessionId
+    );
 
-  // ======================================
-  //         PLATFORM USER METHODS
-  // ======================================
+    return mapUserDomainToDto(currentUser);
+  }
+
+  private async checkEmailAvailability(email: string): Promise<boolean> {
+    const user: User | null = await this.userPersistenceService.getUserByEmail(
+      email
+    );
+
+    if (user && user.isActive) {
+      return false;
+    } else if (user && !user.isActive) {
+      // TODO: There is a complicated edge-case where we need to account for
+      // returning users that previously "deleted" their accounts, but in our logic we deactivate them instead of deleting
+      return false;
+    }
+    return true;
+  }
 
   // PlatformUser (aka User in AUP model) refers to base/root user account
   // that acts as a central node to all application accounts that user may have
@@ -149,16 +166,6 @@ export class UserManagementController {
 
       throw new UserAccountCannotBeCreatedError(email);
     }
-  }
-
-  async getPlatformUser(
-    sessionId: string
-  ): Promise<Omit<UserDto, "id" | "isActive">> {
-    const currentUser: User = await this.resolvePlatformUserBySessionId(
-      sessionId
-    );
-
-    return mapUserDomainToDto(currentUser);
   }
 
   // TODO: All update operations should check if new submitted values are different from the old ones.
@@ -245,21 +252,6 @@ export class UserManagementController {
     await this.deleteAllUserProjections(targetUser.id);
   }
 
-  private async checkEmailAvailability(email: string): Promise<boolean> {
-    const user: User | null = await this.userPersistenceService.getUserByEmail(
-      email
-    );
-
-    if (user && user.isActive) {
-      return false;
-    } else if (user && !user.isActive) {
-      // TODO: There is a complicated edge-case where we need to account for
-      // returning users that previously "deleted" their accounts, but in our logic we deactivate them instead of deleting
-      return false;
-    }
-    return true;
-  }
-
   private async deleteAllUserProjections(userId: string): Promise<void> {
     const allUserProjections: UserProjection[] =
       await this.userProjectionPersistenceService.getProjectionsByUserId(
@@ -299,48 +291,6 @@ export class UserManagementController {
         })
       );
     }
-  }
-
-  async followApp(sessionId: string, appName: string, alias: string) {
-    const user: User = await this.resolvePlatformUserBySessionId(sessionId);
-    const app: Application = await this.resolveAppByName(appName);
-
-    // Checking if the app user already exists
-    const appUser: UserProjection | null =
-      await this.userProjectionPersistenceService.getProjectionByAppAndUserId(
-        app.id,
-        user.id
-      );
-
-    if (appUser) {
-      if (appUser.isActive) {
-        throw new AppUserAlreadyExistsError(user.email, app.name);
-      }
-
-      await this.appUserController.reactivateAppUser(
-        appUser.appId,
-        appUser.userId
-      );
-    } else {
-      await this.appUserController.createAppUser(app.id, user.id, alias);
-    }
-  }
-
-  async unfollowApp(sessionId: string, appName: string): Promise<void> {
-    const user: User = await this.resolvePlatformUserBySessionId(sessionId);
-    const app: Application = await this.resolveAppByName(appName);
-
-    const appUser: UserProjection | null =
-      await this.userProjectionPersistenceService.getProjectionByAppAndUserId(
-        app.id,
-        user.id
-      );
-
-    if (!appUser || !appUser.isActive) {
-      throw new AppUserDoesntExistError(app.name, user.email);
-    }
-
-    await this.appUserController.deactivateAppUser(app.id, user.id);
   }
 
   // ======================================
@@ -402,7 +352,7 @@ export class UserManagementController {
     );
   }
 
-  async signOutUser(sessionId: string): Promise<void> {
+  async signOutPlatformUser(sessionId: string): Promise<void> {
     await this.userSessionController.terminatePlatformUserSession(sessionId);
   }
 
@@ -559,5 +509,47 @@ export class UserManagementController {
     const user: User = await this.resolvePlatformUserBySessionId(sessionId);
 
     return await this.appUserController.getAppsForUser(user.id);
+  }
+
+  async followApp(sessionId: string, appName: string, alias: string) {
+    const user: User = await this.resolvePlatformUserBySessionId(sessionId);
+    const app: Application = await this.resolveAppByName(appName);
+
+    // Checking if the app user already exists
+    const appUser: UserProjection | null =
+      await this.userProjectionPersistenceService.getProjectionByAppAndUserId(
+        app.id,
+        user.id
+      );
+
+    if (appUser) {
+      if (appUser.isActive) {
+        throw new AppUserAlreadyExistsError(user.email, app.name);
+      }
+
+      await this.appUserController.reactivateAppUser(
+        appUser.appId,
+        appUser.userId
+      );
+    } else {
+      await this.appUserController.createAppUser(app.id, user.id, alias);
+    }
+  }
+
+  async unfollowApp(sessionId: string, appName: string): Promise<void> {
+    const user: User = await this.resolvePlatformUserBySessionId(sessionId);
+    const app: Application = await this.resolveAppByName(appName);
+
+    const appUser: UserProjection | null =
+      await this.userProjectionPersistenceService.getProjectionByAppAndUserId(
+        app.id,
+        user.id
+      );
+
+    if (!appUser || !appUser.isActive) {
+      throw new AppUserDoesntExistError(app.name, user.email);
+    }
+
+    await this.appUserController.deactivateAppUser(app.id, user.id);
   }
 }
