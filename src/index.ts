@@ -4,7 +4,7 @@ import { UserProjectionPersistenceService } from "./aup/services/user-projection
 import { SessionPersistenceService } from "./ssd/services/session-persistence-service";
 import { SecretPersistenceService } from "./ssd/services/secret-persistence-service";
 import { DevicePersistenceService } from "./ssd/services/device-persistence-service";
-import { UserManagementController } from "./controllers/user-management-controller";
+import { UserManagementController } from "./controllers/user/user-management-controller";
 import clients from "./prisma-clients";
 import express from "express";
 import cors from "cors";

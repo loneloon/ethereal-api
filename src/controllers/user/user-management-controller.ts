@@ -1,18 +1,18 @@
-import { AppPersistenceService } from "../aup/services/app-persistence-service";
+import { AppPersistenceService } from "../../aup/services/app-persistence-service";
 import { User as UserDto } from "@prisma-dual-cli/generated/aup-client";
 import {
   UpdateUserArgsDto,
   UserPersistenceService,
-} from "../aup/services/user-persistence-service";
-import { UserProjectionPersistenceService } from "../aup/services/user-projection-persistence-service";
-import { DevicePersistenceService } from "../ssd/services/device-persistence-service";
-import { SecretPersistenceService } from "../ssd/services/secret-persistence-service";
-import { SessionPersistenceService } from "../ssd/services/session-persistence-service";
-import { SecretProcessingService } from "../ssd/services/secret-processing-service";
-import { User } from "../aup/models/user";
-import { Secret } from "../ssd/models/secret";
-import { Session } from "../ssd/models/session";
-import { Device } from "../ssd/models/device";
+} from "../../aup/services/user-persistence-service";
+import { UserProjectionPersistenceService } from "../../aup/services/user-projection-persistence-service";
+import { DevicePersistenceService } from "../../ssd/services/device-persistence-service";
+import { SecretPersistenceService } from "../../ssd/services/secret-persistence-service";
+import { SessionPersistenceService } from "../../ssd/services/session-persistence-service";
+import { SecretProcessingService } from "../../ssd/services/secret-processing-service";
+import { User } from "../../aup/models/user";
+import { Secret } from "../../ssd/models/secret";
+import { Session } from "../../ssd/models/session";
+import { Device } from "../../ssd/models/device";
 import { DateTime } from "luxon";
 import {
   validateEmailString,
@@ -24,7 +24,7 @@ import {
   mapApplicationDomainToPublicApplicationViewDto,
   mapUserDomainToDto,
   mapUserProjectionDomainToAppUserDto,
-} from "../aup/mappers/domain-to-dto";
+} from "../../aup/mappers/domain-to-dto";
 import {
   AppDoesntExistError,
   ExpiredUserSessionCannotBeDeletedError,
@@ -54,14 +54,14 @@ import {
   AppUserCannotBeReactivatedError,
   AppUserDoesntExistError,
 } from "@shared/custom-errors";
-import { UserProjection } from "../aup/models/user-projection";
-import { Application } from "../aup/models/application";
-import { AppUserDto } from "../aup/dtos/user-projection";
-import { SessionCookieDto, SessionStatus } from "../ssd/dtos/authentication";
+import { UserProjection } from "../../aup/models/user-projection";
+import { Application } from "../../aup/models/application";
+import { AppUserDto } from "../../aup/dtos/user-projection";
+import { SessionCookieDto, SessionStatus } from "../../ssd/dtos/authentication";
 import {
   PublicApplicationViewDto,
   UserRelatedApplicationViewDto,
-} from "../aup/dtos/application";
+} from "../../aup/dtos/application";
 
 export class UserManagementController {
   constructor(

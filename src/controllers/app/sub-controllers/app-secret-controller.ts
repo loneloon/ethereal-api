@@ -1,8 +1,8 @@
 import { DateTime } from "luxon";
 import { v4 as uuid } from "uuid";
-import { SecretPersistenceService } from "../../ssd/services/secret-persistence-service";
-import { SecretProcessingService } from "../../ssd/services/secret-processing-service";
-import { Secret } from "../../ssd/models/secret";
+import { SecretPersistenceService } from "../../../ssd/services/secret-persistence-service";
+import { SecretProcessingService } from "../../../ssd/services/secret-processing-service";
+import { Secret } from "../../../ssd/models/secret";
 import {
   AppHasNoAssociatedSecretError,
   AppSecretCannotBeCreatedError,
@@ -10,9 +10,9 @@ import {
   AppSecretCannotBeUpdatedError,
   InvalidAppAccessKeyError,
   InvalidAppCredentialsError,
-} from "../../shared/custom-errors";
-import { Application } from "../../aup/models/application";
-import { ApplicationKeysDto } from "../../ssd/dtos/authentication";
+} from "../../../shared/custom-errors";
+import { Application } from "../../../aup/models/application";
+import { ApplicationKeysDto } from "../../../ssd/dtos/authentication";
 import _ from "lodash";
 
 export class AppSecretController {
