@@ -1,9 +1,6 @@
 import { AppPersistenceService } from "../../aup/services/app-persistence-service";
 import { User as UserDto } from "@prisma-dual-cli/generated/aup-client";
-import {
-  UpdateUserArgsDto,
-  UserPersistenceService,
-} from "../../aup/services/user-persistence-service";
+import { UserPersistenceService } from "../../aup/services/user-persistence-service";
 import { UserProjectionPersistenceService } from "../../aup/services/user-projection-persistence-service";
 import { DevicePersistenceService } from "../../ssd/services/device-persistence-service";
 import { SecretPersistenceService } from "../../ssd/services/secret-persistence-service";
@@ -13,45 +10,21 @@ import { User } from "../../aup/models/user";
 import { Secret } from "../../ssd/models/secret";
 import { Session } from "../../ssd/models/session";
 import { Device } from "../../ssd/models/device";
-import { DateTime } from "luxon";
 import {
   validateEmailString,
-  validateFirstOrLastNameString,
   validatePasswordString,
-  validateUsernameString,
 } from "@shared/validators";
-import {
-  mapApplicationDomainToPublicApplicationViewDto,
-  mapUserDomainToDto,
-  mapUserProjectionDomainToAppUserDto,
-} from "../../aup/mappers/domain-to-dto";
+import { mapUserDomainToDto } from "../../aup/mappers/domain-to-dto";
 import {
   AppDoesntExistError,
-  ExpiredUserSessionCannotBeDeletedError,
-  InvalidOldPasswordInputError,
   InvalidUserCredentialsError,
   UserAccountCannotBeCreatedError,
-  UserAccountCannotBeDeactivatedError,
   UserAccountDoesntExistAnymoreError,
   UserAccountDoesntExistAnymoreWithSessionsError,
-  UserAccountHasNoAssociatedSecretError,
   UserAccountRollbackError,
   UserDeviceCannotBeCreatedError,
-  UserEmailCannotBeUpdatedError,
   UserEmailIsNotAvailableError,
-  UserIsNotAuthenticatedError,
-  UserNameCannotBeUpdatedError,
-  UserSecretCannotBeCreatedError,
-  UserSecretCannotBeDeletedError,
-  UserSecretCannotBeUpdatedError,
-  UserSessionCannotBeCreatedError,
-  UserSessionCannotBeDeletedError,
-  UserSessionHasExpiredError,
-  UserUsernameCannotBeUpdatedError,
-  AppUserCannotBeCreatedError,
   AppUserAlreadyExistsError,
-  AppUserCannotBeDeactivatedError,
-  AppUserCannotBeReactivatedError,
   AppUserDoesntExistError,
 } from "@shared/custom-errors";
 import { UserProjection } from "../../aup/models/user-projection";
