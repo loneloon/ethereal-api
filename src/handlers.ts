@@ -50,9 +50,10 @@ export const signInUser = async (
       ip
     );
 
-    const sessionCookie = await userManagementController.issueSessionCookie(
-      userSession.id
-    );
+    const sessionCookie =
+      await userManagementController.getPlatformUserSessionCookie(
+        userSession.id
+      );
 
     context.res
       .cookie(sessionCookie.name, sessionCookie.data, {
@@ -98,7 +99,7 @@ export const signOutUser = async (
       await resolveAuthContext(context, userManagementController)
     ).sessionId;
 
-    await userManagementController.terminatePlatformUserSession(sessionId);
+    await userManagementController.signOutUser(sessionId);
   } catch (error: any) {
     context.res.status(error.httpCode).json(error.dto);
     return;
@@ -173,7 +174,7 @@ export const updateUserPassword = async (
       await resolveAuthContext(context, userManagementController)
     ).sessionId;
 
-    await userManagementController.updatePlatformUserSecret(
+    await userManagementController.updatePlatformUserPassword(
       sessionId,
       body.oldPassword,
       body.newPassword
@@ -636,9 +637,8 @@ export const authenticateAppUser = async (
       sessionId,
       params.appName
     );
-    const sessionCookie = await userManagementController.issueSessionCookie(
-      sessionId
-    );
+    const sessionCookie =
+      await userManagementController.getPlatformUserSessionCookie(sessionId);
 
     context.res.redirect(
       appUrl +
