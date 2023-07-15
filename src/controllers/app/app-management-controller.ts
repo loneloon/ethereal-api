@@ -1,14 +1,14 @@
 import { Application as ApplicationDto } from "@prisma-dual-cli/generated/aup-client";
-import { AppPersistenceService } from "../aup/services/app-persistence-service";
-import { UserProjectionPersistenceService } from "../aup/services/user-projection-persistence-service";
-import { SecretPersistenceService } from "../ssd/services/secret-persistence-service";
-import { SecretProcessingService } from "../ssd/services/secret-processing-service";
-import { Secret } from "../ssd/models/secret";
+import { AppPersistenceService } from "../../aup/services/app-persistence-service";
+import { UserProjectionPersistenceService } from "../../aup/services/user-projection-persistence-service";
+import { SecretPersistenceService } from "../../ssd/services/secret-persistence-service";
+import { SecretProcessingService } from "../../ssd/services/secret-processing-service";
+import { Secret } from "../../ssd/models/secret";
 import { DateTime } from "luxon";
-import { v4 as uuid } from "uuid";
+
 import _ from "lodash";
-import { validateEmailString } from "../shared/validators";
-import { Application } from "../aup/models/application";
+import { validateEmailString } from "../../shared/validators";
+import { Application } from "../../aup/models/application";
 import {
   AppDoesntExistAnymoreWithAccessKeysError,
   AppHasNoAssociatedSecretError,
@@ -23,91 +23,58 @@ import {
   AppSecretCannotBeDeletedError,
   AppDoesntExistAnymoreError,
   AppDoesntExistError,
-} from "../shared/custom-errors";
-import { ApplicationKeysDto } from "../ssd/dtos/authentication";
+} from "../../shared/custom-errors";
+import { ApplicationKeysDto } from "../../ssd/dtos/authentication";
 import {
   mapApplicationDomainToPrivateApplicationViewDto,
   mapApplicationDomainToPublicApplicationViewDto,
   mapUserProjectionDomainToAppUserDto,
-} from "../aup/mappers/domain-to-dto";
-import { PublicApplicationViewDto } from "../aup/dtos/application";
-import { UserProjection } from "../aup/models/user-projection";
-import { AppUserDto } from "../aup/dtos/user-projection";
+} from "../../aup/mappers/domain-to-dto";
+import { PublicApplicationViewDto } from "../../aup/dtos/application";
+import { UserProjection } from "../../aup/models/user-projection";
+import { AppUserDto } from "../../aup/dtos/user-projection";
+import { AppSecretController } from "./app-secret-controller";
 
 export class AppManagementController {
+  private readonly appSecretController: AppSecretController;
+
   constructor(
     readonly appPersistenceService: AppPersistenceService,
     readonly userProjectionPersistenceService: UserProjectionPersistenceService,
     readonly secretPersistenceService: SecretPersistenceService,
     readonly secretProcessingService: SecretProcessingService
-  ) {}
-
-  // ======================================
-  //     APP SECRET/ACCESS-KEY METHODS
-  // ======================================
-
-  private compileAppSecretSourceString(
-    appId: string,
-    uniqueCode: string,
-    createdAt: DateTime
-  ): string {
-    return appId + uniqueCode + createdAt.toLocaleString();
+  ) {
+    this.appSecretController = new AppSecretController(
+      this.secretPersistenceService,
+      this.secretProcessingService
+    );
   }
 
-  private async createAppSecret(
-    appId: string,
-    createdAt: DateTime
-  ): Promise<[secret: Secret, backupCode: string]> {
-    const backupCode = uuid();
-    const secretSource = this.compileAppSecretSourceString(
-      appId,
-      backupCode,
-      createdAt
-    );
+  // ======================================
+  //          GENERAL APP METHODS
+  // ======================================
 
-    const [passHash, salt] =
-      await this.secretProcessingService.generatePasswordHashAndSalt(
-        secretSource
-      );
-    const newSecret: Secret | null =
-      await this.secretPersistenceService.createSecret({
-        externalId: appId,
-        type: "APP",
-        passHash,
-        salt,
-      });
+  public async resetAccessKeys(
+    appName: string,
+    email: string,
+    backupCode: string
+  ): Promise<ApplicationKeysDto> {
+    const app: Application = await this.resolveAppByName(appName);
 
-    if (!newSecret) {
-      throw new AppSecretCannotBeCreatedError(appId);
+    if (app.email !== email) {
+      throw new InvalidAppCredentialsError();
     }
 
-    return [newSecret, backupCode];
+    return await this.appSecretController.resetAccessKeys(
+      app.id,
+      app.metadata.creationTimestamp,
+      backupCode
+    );
   }
 
-  private async resolveAppByAccessKey(
-    accessKeyId: string,
-    secretAccessKey: string
-  ): Promise<Application> {
-    const secretId: string =
-      this.secretProcessingService.encryptionService.decrypt(accessKeyId);
-    const unverifiedHash: string =
-      this.secretProcessingService.encryptionService.decrypt(secretAccessKey);
-
-    const secret: Secret | null = await this.secretPersistenceService.getSecret(
-      secretId,
-      "APP"
-    );
-
-    if (!secret) {
-      throw new InvalidAppAccessKeyError();
-    }
-
-    if (!_.isEqual(unverifiedHash, secret.passHash)) {
-      throw new InvalidAppAccessKeyError();
-    }
-
+  private async resolveAppById(appId: string): Promise<Application> {
     const app: Application | null =
-      await this.appPersistenceService.getApplicationById(secret.externalId);
+      await this.appPersistenceService.getApplicationById(appId);
 
     if (!app) {
       // This can happen if an application record was hard deleted but related secret wasn't deleted before/after that
@@ -116,10 +83,10 @@ export class AppManagementController {
         JSON.stringify({
           message:
             "[CRITICAL] Orphan secret detected! There is a leftover secret record that is linked to an app that doesn't exist anymore. Cannot resolve application!",
-          appId: secret.externalId,
+          appId,
         })
       );
-      throw new AppDoesntExistAnymoreWithAccessKeysError(secret.externalId);
+      throw new AppDoesntExistAnymoreWithAccessKeysError(appId);
     }
 
     if (!app.isActive) {
@@ -129,99 +96,14 @@ export class AppManagementController {
         JSON.stringify({
           message:
             "[CRITICAL] Orphan secret detected! There is a leftover secret record that is linked to a deactivated app. Cannot resolve application!",
-          appId: secret.externalId,
+          appId: appId,
         })
       );
-      throw new AppDoesntExistAnymoreWithAccessKeysError(secret.externalId);
+      throw new AppDoesntExistAnymoreWithAccessKeysError(appId);
     }
 
     return app;
   }
-
-  public async resetAccessKeys(
-    name: string,
-    email: string,
-    backupCode: string
-  ): Promise<ApplicationKeysDto> {
-    const targetApp: Application | null =
-      await this.appPersistenceService.getApplicationByName(name);
-
-    if (!targetApp || targetApp.email !== email) {
-      throw new InvalidAppCredentialsError();
-    }
-
-    const secret: Secret | null = await this.secretPersistenceService.getSecret(
-      targetApp.id,
-      "APP"
-    );
-
-    if (!secret) {
-      throw new AppHasNoAssociatedSecretError(targetApp.id);
-    }
-
-    const assumedAppSecretSourceString = this.compileAppSecretSourceString(
-      targetApp.id,
-      backupCode,
-      targetApp.metadata.creationTimestamp
-    );
-
-    if (
-      !(await this.secretProcessingService.checkPasswordAgainstHash(
-        assumedAppSecretSourceString,
-        secret.passHash,
-        secret.salt
-      ))
-    ) {
-      // Technically it would be more convenient to return "incorrect backup code" error,
-      // but we don't want to encourage backup code bruteforcing so we just throw a general incorrect credentials error
-      throw new InvalidAppCredentialsError();
-    }
-
-    const newBackupCode = uuid();
-
-    const newSecretSource = this.compileAppSecretSourceString(
-      targetApp.id,
-      newBackupCode,
-      targetApp.metadata.creationTimestamp
-    );
-
-    const [passHash, salt] =
-      await this.secretProcessingService.generatePasswordHashAndSalt(
-        newSecretSource
-      );
-    const updatedAppSecret: Secret | null =
-      await this.secretPersistenceService.updateSecret(targetApp.id, "APP", {
-        passHash,
-        salt,
-      });
-
-    if (!updatedAppSecret) {
-      throw new AppSecretCannotBeUpdatedError(targetApp.id);
-    }
-
-    return {
-      accessKeyId: this.secretProcessingService.encryptionService.encrypt(
-        updatedAppSecret.externalId
-      ),
-      secretAccessKey: this.secretProcessingService.encryptionService.encrypt(
-        updatedAppSecret.passHash
-      ),
-      backupCode: newBackupCode,
-    };
-  }
-
-  private async deleteAppSecret(appId: string): Promise<void> {
-    const deletedSecret: Secret | null =
-      await this.secretPersistenceService.deleteSecret(appId, "APP");
-
-    if (!deletedSecret) {
-      throw new AppSecretCannotBeDeletedError(appId);
-    }
-  }
-
-  // ======================================
-  //          GENERAL APP METHODS
-  // ======================================
 
   public async registerApp(
     name: string,
@@ -252,10 +134,11 @@ export class AppManagementController {
     }
 
     try {
-      const [newAppSecret, backupCode] = await this.createAppSecret(
-        newApp.id,
-        newApp.metadata.creationTimestamp
-      );
+      const [newAppSecret, backupCode] =
+        await this.appSecretController.createAppSecret(
+          newApp.id,
+          newApp.metadata.creationTimestamp
+        );
 
       return {
         accessKeyId: this.secretProcessingService.encryptionService.encrypt(
@@ -313,10 +196,13 @@ export class AppManagementController {
     secretAccessKey: string,
     name: string
   ): Promise<void> {
-    const targetApp: Application = await this.resolveAppByAccessKey(
-      accessKeyId,
-      secretAccessKey
-    );
+    const targetAppId: string =
+      await this.appSecretController.resolveAppIdByAccessKey(
+        accessKeyId,
+        secretAccessKey
+      );
+
+    const targetApp: Application = await this.resolveAppById(targetAppId);
 
     const isAppNameAvailable: boolean = await this.checkAppNameAvailability(
       name
@@ -341,10 +227,13 @@ export class AppManagementController {
     secretAccessKey: string,
     url: string
   ): Promise<void> {
-    const targetApp: Application = await this.resolveAppByAccessKey(
-      accessKeyId,
-      secretAccessKey
-    );
+    const targetAppId: string =
+      await this.appSecretController.resolveAppIdByAccessKey(
+        accessKeyId,
+        secretAccessKey
+      );
+
+    const targetApp: Application = await this.resolveAppById(targetAppId);
 
     // TODO: Url string validator
 
@@ -363,10 +252,13 @@ export class AppManagementController {
     secretAccessKey: string,
     email: string
   ): Promise<void> {
-    const targetApp: Application = await this.resolveAppByAccessKey(
-      accessKeyId,
-      secretAccessKey
-    );
+    const targetAppId: string =
+      await this.appSecretController.resolveAppIdByAccessKey(
+        accessKeyId,
+        secretAccessKey
+      );
+
+    const targetApp: Application = await this.resolveAppById(targetAppId);
 
     validateEmailString(email);
 
@@ -390,22 +282,28 @@ export class AppManagementController {
     accessKeyId: string,
     secretAccessKey: string
   ): Promise<Omit<ApplicationDto, "id" | "isActive">> {
-    const app: Application = await this.resolveAppByAccessKey(
-      accessKeyId,
-      secretAccessKey
-    );
+    const targetAppId: string =
+      await this.appSecretController.resolveAppIdByAccessKey(
+        accessKeyId,
+        secretAccessKey
+      );
 
-    return mapApplicationDomainToPrivateApplicationViewDto(app);
+    const targetApp: Application = await this.resolveAppById(targetAppId);
+
+    return mapApplicationDomainToPrivateApplicationViewDto(targetApp);
   }
 
   public async deactivateApp(
     accessKeyId: string,
     secretAccessKey: string
   ): Promise<void> {
-    const targetApp: Application = await this.resolveAppByAccessKey(
-      accessKeyId,
-      secretAccessKey
-    );
+    const targetAppId: string =
+      await this.appSecretController.resolveAppIdByAccessKey(
+        accessKeyId,
+        secretAccessKey
+      );
+
+    const targetApp: Application = await this.resolveAppById(targetAppId);
 
     const deactivatedApp: Application | null =
       await this.appPersistenceService.updateApplication(targetApp.id, {
@@ -416,7 +314,7 @@ export class AppManagementController {
       throw new AppNameCannotBeUpdatedError(targetApp.id);
     }
 
-    await this.deleteAppSecret(deactivatedApp.id);
+    await this.appSecretController.deleteAppSecret(deactivatedApp.id);
   }
 
   private async checkAppNameAvailability(name: string): Promise<boolean> {
@@ -441,12 +339,16 @@ export class AppManagementController {
     accessKeyId: string,
     secretAccessKey: string
   ): Promise<AppUserDto[]> {
-    const appId: string = (
-      await this.resolveAppByAccessKey(accessKeyId, secretAccessKey)
-    ).id;
+    const targetAppId: string =
+      await this.appSecretController.resolveAppIdByAccessKey(
+        accessKeyId,
+        secretAccessKey
+      );
 
     const allAppUsers: UserProjection[] =
-      await this.userProjectionPersistenceService.getProjectionsByAppId(appId);
+      await this.userProjectionPersistenceService.getProjectionsByAppId(
+        targetAppId
+      );
     const activeAppUsers: UserProjection[] = allAppUsers.filter(
       (appUser) => appUser.isActive
     );

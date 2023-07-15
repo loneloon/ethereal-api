@@ -37,7 +37,7 @@ import {
 } from "./handlers";
 import { SecretProcessingService } from "./ssd/services/secret-processing-service";
 import { Espeon } from "espeon";
-import { AppManagementController } from "./controllers/app-management-controller";
+import { AppManagementController } from "./controllers/app/app-management-controller";
 
 async function main(): Promise<void> {
   const config = (() => {

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { UserManagementController } from "./controllers/user-management-controller";
 import { UserIsNotAuthenticatedError } from "./shared/custom-errors/categories/users/authentication";
-import { AppManagementController } from "./controllers/app-management-controller";
+import { AppManagementController } from "./controllers/app/app-management-controller";
 import { MissingArgumentsError } from "./shared/custom-errors/categories/common/validation";
 
 export const signUpUser = async (
