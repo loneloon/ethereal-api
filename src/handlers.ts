@@ -116,11 +116,16 @@ export const getUser = async (
   userManagementController: UserManagementController
 ): Promise<void> => {
   try {
-    const sessionId = (
-      await resolveAuthContext(context, userManagementController)
-    ).sessionId;
+    const userAuthContext = await resolveAuthContext(
+      context,
+      userManagementController
+    );
 
-    const userDto = await userManagementController.getPlatformUser(sessionId);
+    const userDto = await userManagementController.getPlatformUser(
+      userAuthContext.sessionId,
+      userAuthContext.userAgent,
+      userAuthContext.ip
+    );
     context.res.status(200).json(userDto);
     return;
   } catch (error: any) {
@@ -140,12 +145,15 @@ export const updateUserEmail = async (
       throw new MissingArgumentsError(["email"]);
     }
 
-    const sessionId = (
-      await resolveAuthContext(context, userManagementController)
-    ).sessionId;
+    const userAuthContext = await resolveAuthContext(
+      context,
+      userManagementController
+    );
 
     await userManagementController.updatePlatformUserEmail(
-      sessionId,
+      userAuthContext.sessionId,
+      userAuthContext.userAgent,
+      userAuthContext.ip,
       body.email
     );
     context.res.status(200).json({
@@ -170,12 +178,15 @@ export const updateUserPassword = async (
       throw new MissingArgumentsError(["oldPassword", "newPassword"]);
     }
 
-    const sessionId = (
-      await resolveAuthContext(context, userManagementController)
-    ).sessionId;
+    const userAuthContext = await resolveAuthContext(
+      context,
+      userManagementController
+    );
 
     await userManagementController.updatePlatformUserPassword(
-      sessionId,
+      userAuthContext.sessionId,
+      userAuthContext.userAgent,
+      userAuthContext.ip,
       body.oldPassword,
       body.newPassword
     );
@@ -200,12 +211,15 @@ export const updateUserUsername = async (
       throw new MissingArgumentsError(["username"]);
     }
 
-    const sessionId = (
-      await resolveAuthContext(context, userManagementController)
-    ).sessionId;
+    const userAuthContext = await resolveAuthContext(
+      context,
+      userManagementController
+    );
 
     await userManagementController.updatePlatformUserUsername(
-      sessionId,
+      userAuthContext.sessionId,
+      userAuthContext.userAgent,
+      userAuthContext.ip,
       body.username
     );
     context.res
@@ -229,12 +243,15 @@ export const updateUserName = async (
       throw new MissingArgumentsError(["firstName", "lastName"]);
     }
 
-    const sessionId = (
-      await resolveAuthContext(context, userManagementController)
-    ).sessionId;
+    const userAuthContext = await resolveAuthContext(
+      context,
+      userManagementController
+    );
 
     await userManagementController.updatePlatformUserName(
-      sessionId,
+      userAuthContext.sessionId,
+      userAuthContext.userAgent,
+      userAuthContext.ip,
       body.firstName,
       body.lastName
     );
@@ -494,12 +511,15 @@ export const followApp = async (
       throw new MissingArgumentsError(["appName", "alias"]);
     }
 
-    const sessionId = (
-      await resolveAuthContext(context, userManagementController)
-    ).sessionId;
+    const userAuthContext = await resolveAuthContext(
+      context,
+      userManagementController
+    );
 
     await userManagementController.followApp(
-      sessionId,
+      userAuthContext.sessionId,
+      userAuthContext.userAgent,
+      userAuthContext.ip,
       body.appName,
       body.alias
     );
@@ -524,11 +544,17 @@ export const unfollowApp = async (
       throw new MissingArgumentsError(["appName", "alias"]);
     }
 
-    const sessionId = (
-      await resolveAuthContext(context, userManagementController)
-    ).sessionId;
+    const userAuthContext = await resolveAuthContext(
+      context,
+      userManagementController
+    );
 
-    await userManagementController.unfollowApp(sessionId, body.appName);
+    await userManagementController.unfollowApp(
+      userAuthContext.sessionId,
+      userAuthContext.userAgent,
+      userAuthContext.ip,
+      body.appName
+    );
     context.res
       .status(200)
       .json({ message: `User has unfollowed the '${body.appName}' app!` });
@@ -550,12 +576,15 @@ export const getAppUser = async (
       throw new MissingArgumentsError(["appName"]);
     }
 
-    const sessionId = (
-      await resolveAuthContext(context, userManagementController)
-    ).sessionId;
+    const userAuthContext = await resolveAuthContext(
+      context,
+      userManagementController
+    );
 
     const appUserDto = await userManagementController.getAppUser(
-      sessionId,
+      userAuthContext.sessionId,
+      userAuthContext.userAgent,
+      userAuthContext.ip,
       params.appName
     );
     context.res.status(200).json(appUserDto);
@@ -629,16 +658,21 @@ export const authenticateAppUser = async (
       throw new MissingArgumentsError(["appName"]);
     }
 
-    const sessionId = (
-      await resolveAuthContext(context, userManagementController)
-    ).sessionId;
+    const userAuthContext = await resolveAuthContext(
+      context,
+      userManagementController
+    );
 
     const appUrl = await userManagementController.getAppUrl(
-      sessionId,
+      userAuthContext.sessionId,
+      userAuthContext.userAgent,
+      userAuthContext.ip,
       params.appName
     );
     const sessionCookie =
-      await userManagementController.getPlatformUserSessionCookie(sessionId);
+      await userManagementController.getPlatformUserSessionCookie(
+        userAuthContext.sessionId
+      );
 
     context.res.redirect(
       appUrl +
@@ -660,12 +694,15 @@ export const getUserFollowedApps = async (
   userManagementController: UserManagementController
 ): Promise<void> => {
   try {
-    const sessionId = (
-      await resolveAuthContext(context, userManagementController)
-    ).sessionId;
+    const userAuthContext = await resolveAuthContext(
+      context,
+      userManagementController
+    );
 
     const followedApps = await userManagementController.getUserFollowedApps(
-      sessionId
+      userAuthContext.sessionId,
+      userAuthContext.userAgent,
+      userAuthContext.ip
     );
     context.res.status(200).json({ followedApps });
     return;
@@ -680,12 +717,15 @@ export const getAppsForUser = async (
   userManagementController: UserManagementController
 ): Promise<void> => {
   try {
-    const sessionId = (
-      await resolveAuthContext(context, userManagementController)
-    ).sessionId;
+    const userAuthContext = await resolveAuthContext(
+      context,
+      userManagementController
+    );
 
     const appsForUser = await userManagementController.getAppsForUser(
-      sessionId
+      userAuthContext.sessionId,
+      userAuthContext.userAgent,
+      userAuthContext.ip
     );
     context.res.status(200).json({ apps: appsForUser });
     return;
@@ -698,7 +738,9 @@ export const getAppsForUser = async (
 async function resolveAuthContext(
   context: { req: Request; res: Response },
   userManagementController: UserManagementController
-): Promise<{ sessionId: string }> {
+): Promise<{ sessionId: string; userAgent: string; ip: string }> {
+  const userAgent = context.req.headers["user-agent"] ?? "";
+  const ip = context.req.ip;
   const rawCookie = context.req.headers.cookie;
 
   if (!rawCookie) {
@@ -710,5 +752,7 @@ async function resolveAuthContext(
       userManagementController.secretProcessingService.parseSessionCookie(
         rawCookie
       ),
+    userAgent,
+    ip,
   };
 }

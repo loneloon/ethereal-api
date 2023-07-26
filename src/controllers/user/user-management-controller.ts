@@ -26,6 +26,7 @@ import {
   UserEmailIsNotAvailableError,
   AppUserAlreadyExistsError,
   AppUserDoesntExistError,
+  UserSessionDeviceMismatchError,
 } from "@shared/custom-errors";
 import { UserProjection } from "../../aup/models/user-projection";
 import { Application } from "../../aup/models/application";
@@ -64,7 +65,8 @@ export class UserManagementController {
     );
     this.userSessionController = new UserSessionController(
       this.sessionPersistenceService,
-      this.secretProcessingService
+      this.secretProcessingService,
+      this.devicePersistenceService
     );
     this.appUserController = new AppUserController(
       this.userProjectionPersistenceService,
@@ -73,10 +75,14 @@ export class UserManagementController {
   }
 
   async getPlatformUser(
-    sessionId: string
+    sessionId: string,
+    userAgent: string,
+    ip: string
   ): Promise<Omit<UserDto, "id" | "isActive">> {
     const currentUser: User = await this.resolvePlatformUserBySessionId(
-      sessionId
+      sessionId,
+      userAgent,
+      ip
     );
 
     return mapUserDomainToDto(currentUser);
@@ -146,11 +152,15 @@ export class UserManagementController {
 
   async updatePlatformUserPassword(
     sessionId: string,
+    userAgent: string,
+    ip: string,
     oldPassword: string,
     newPassword: string
   ): Promise<void> {
     const targetUser: User = await this.resolvePlatformUserBySessionId(
-      sessionId
+      sessionId,
+      userAgent,
+      ip
     );
 
     await this.userSecretController.updatePlatformUserSecret(
@@ -162,10 +172,14 @@ export class UserManagementController {
 
   async updatePlatformUserEmail(
     sessionId: string,
+    userAgent: string,
+    ip: string,
     email: string
   ): Promise<void> {
     const targetUser: User = await this.resolvePlatformUserBySessionId(
-      sessionId
+      sessionId,
+      userAgent,
+      ip
     );
 
     const isEmailAddressAvailable: boolean = await this.checkEmailAvailability(
@@ -184,10 +198,14 @@ export class UserManagementController {
 
   async updatePlatformUserUsername(
     sessionId: string,
+    userAgent: string,
+    ip: string,
     username: string
   ): Promise<void> {
     const targetUser: User = await this.resolvePlatformUserBySessionId(
-      sessionId
+      sessionId,
+      userAgent,
+      ip
     );
 
     await this.userUpdateController.updatePlatformUserUsername(
@@ -198,11 +216,15 @@ export class UserManagementController {
 
   async updatePlatformUserName(
     sessionId: string,
+    userAgent: string,
+    ip: string,
     firstName: string,
     lastName: string
   ): Promise<void> {
     const targetUser: User = await this.resolvePlatformUserBySessionId(
-      sessionId
+      sessionId,
+      userAgent,
+      ip
     );
 
     await this.userUpdateController.updatePlatformUserName(
@@ -212,9 +234,15 @@ export class UserManagementController {
     );
   }
 
-  async deactivatePlatformUser(sessionId: string): Promise<void> {
+  async deactivatePlatformUser(
+    sessionId: string,
+    userAgent: string,
+    ip: string
+  ): Promise<void> {
     const targetUser: User = await this.resolvePlatformUserBySessionId(
-      sessionId
+      sessionId,
+      userAgent,
+      ip
     );
 
     await this.userSessionController.deleteAllUserSessions(targetUser.id);
@@ -348,10 +376,19 @@ export class UserManagementController {
   // ======================================
 
   private async resolvePlatformUserBySessionId(
-    sessionId: string
+    sessionId: string,
+    userAgent: string,
+    ip: string
   ): Promise<User> {
     const session: Session =
       await this.userSessionController.resolveSessionById(sessionId);
+
+    const userDeviceId: string | null =
+      await this.userSessionController.getUserDeviceId(userAgent, ip);
+
+    if (!userDeviceId || userDeviceId !== session.deviceId) {
+      throw new UserSessionDeviceMismatchError();
+    }
 
     const user: User | null = await this.userPersistenceService.getUserById(
       session.userId
@@ -441,9 +478,15 @@ export class UserManagementController {
 
   public async getAppUser(
     sessionId: string,
+    userAgent: string,
+    ip: string,
     appName: string
   ): Promise<AppUserDto> {
-    const user: User = await this.resolvePlatformUserBySessionId(sessionId);
+    const user: User = await this.resolvePlatformUserBySessionId(
+      sessionId,
+      userAgent,
+      ip
+    );
     const app: Application = await this.resolveAppByName(appName);
 
     return this.appUserController.getAppUser(
@@ -454,8 +497,17 @@ export class UserManagementController {
     );
   }
 
-  public async getAppUrl(sessionId: string, appName: string): Promise<string> {
-    const user: User = await this.resolvePlatformUserBySessionId(sessionId);
+  public async getAppUrl(
+    sessionId: string,
+    userAgent: string,
+    ip: string,
+    appName: string
+  ): Promise<string> {
+    const user: User = await this.resolvePlatformUserBySessionId(
+      sessionId,
+      userAgent,
+      ip
+    );
     const app: Application = await this.resolveAppByName(appName);
     // We don't need the app user, but this call will act as a validator, it will throw if platform user is not following the target app
     const appUser = await this.appUserController.getAppUser(
@@ -469,23 +521,45 @@ export class UserManagementController {
   }
 
   public async getUserFollowedApps(
-    sessionId: string
+    sessionId: string,
+    userAgent: string,
+    ip: string
   ): Promise<PublicApplicationViewDto[]> {
-    const user: User = await this.resolvePlatformUserBySessionId(sessionId);
+    const user: User = await this.resolvePlatformUserBySessionId(
+      sessionId,
+      userAgent,
+      ip
+    );
 
     return await this.appUserController.getUserFollowedApps(user.id);
   }
 
   public async getAppsForUser(
-    sessionId: string
+    sessionId: string,
+    userAgent: string,
+    ip: string
   ): Promise<UserRelatedApplicationViewDto[]> {
-    const user: User = await this.resolvePlatformUserBySessionId(sessionId);
+    const user: User = await this.resolvePlatformUserBySessionId(
+      sessionId,
+      userAgent,
+      ip
+    );
 
     return await this.appUserController.getAppsForUser(user.id);
   }
 
-  async followApp(sessionId: string, appName: string, alias: string) {
-    const user: User = await this.resolvePlatformUserBySessionId(sessionId);
+  async followApp(
+    sessionId: string,
+    userAgent: string,
+    ip: string,
+    appName: string,
+    alias: string
+  ) {
+    const user: User = await this.resolvePlatformUserBySessionId(
+      sessionId,
+      userAgent,
+      ip
+    );
     const app: Application = await this.resolveAppByName(appName);
 
     // Checking if the app user already exists
@@ -509,8 +583,17 @@ export class UserManagementController {
     }
   }
 
-  async unfollowApp(sessionId: string, appName: string): Promise<void> {
-    const user: User = await this.resolvePlatformUserBySessionId(sessionId);
+  async unfollowApp(
+    sessionId: string,
+    userAgent: string,
+    ip: string,
+    appName: string
+  ): Promise<void> {
+    const user: User = await this.resolvePlatformUserBySessionId(
+      sessionId,
+      userAgent,
+      ip
+    );
     const app: Application = await this.resolveAppByName(appName);
 
     const appUser: UserProjection | null =

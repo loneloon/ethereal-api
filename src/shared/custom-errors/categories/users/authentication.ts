@@ -117,3 +117,15 @@ export class InvalidUserCredentialsError extends CustomError {
     super({});
   }
 }
+
+export class UserSessionDeviceMismatchError extends CustomError {
+  readonly httpCode: number = 403;
+  readonly platformCode: string = "E1006";
+  protected readonly internalOnly: boolean = false;
+  protected readonly messageTemplate: string =
+    "User attempted to impersonate and authenticate as another device! Access denied!";
+
+  constructor() {
+    super({});
+  }
+}

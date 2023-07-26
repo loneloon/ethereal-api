@@ -13,14 +13,31 @@ import {
   SessionCookieDto,
   SessionStatus,
 } from "../../../ssd/dtos/authentication";
+import { DevicePersistenceService } from "../../../ssd/services/device-persistence-service";
+import { Device } from "../../../ssd/models/device";
 
 export class UserSessionController {
   constructor(
     readonly sessionPersistenceService: SessionPersistenceService,
-    readonly secretProcessingService: SecretProcessingService
+    readonly secretProcessingService: SecretProcessingService,
+    readonly devicePersistenceService: DevicePersistenceService
   ) {}
 
   // TODO: Get all active sessions for user
+
+  // TechDebt: This is supposed to be contained in a separate user device controller
+  public async getUserDeviceId(
+    userAgent: string,
+    ip: string
+  ): Promise<string | null> {
+    const userDevice: Device | null =
+      await this.devicePersistenceService.getDeviceByUserAgentAndIp(
+        userAgent,
+        ip
+      );
+
+    return userDevice ? userDevice.id : null;
+  }
 
   public async resolveSessionById(sessionId: string): Promise<Session> {
     // Verifying if session is actually expired (this is technically redundant)
