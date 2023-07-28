@@ -28,7 +28,6 @@ import {
   unfollowApp,
   followApp,
   getAppUser,
-  proxySignInUser,
   getUserSessionStatus,
   getUserFollowedApps,
   getAppsForUser,
@@ -211,14 +210,6 @@ async function main(): Promise<void> {
 
   app.get("/app/users", (req, res) =>
     getAppUsers({ req, res }, appManagementController)
-  );
-
-  app.post("/app/user/proxy/sign-in", (req, res) =>
-    proxySignInUser(
-      { req, res },
-      userManagementController,
-      appManagementController
-    )
   );
 
   app.listen(config.port, () => {
