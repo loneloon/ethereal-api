@@ -622,14 +622,17 @@ export const authenticateAppUser = async (
         userAuthContext.sessionId
       );
 
-    context.res.redirect(
-      appUrl +
-        `/sign-in/ethereal?blessing=${encodeURIComponent(
-          sessionCookie.data
-        )}&expires=${encodeURIComponent(
-          Math.floor(sessionCookie.expiresAt.getTime() / 1000)
-        )}`
-    );
+    context.res
+      .status(200)
+      .json({
+        authUrl:
+          appUrl +
+          `/sign-in/ethereal?blessing=${encodeURIComponent(
+            sessionCookie.data
+          )}&expires=${encodeURIComponent(
+            Math.floor(sessionCookie.expiresAt.getTime() / 1000)
+          )}`,
+      });
     return;
   } catch (error: any) {
     context.res.status(error.httpCode).json(error.dto);
